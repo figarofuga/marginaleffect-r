@@ -1,14 +1,19 @@
 ---
-title: A title
-subtitle: A subtitle
+title: Marginal effectsとその周辺
+subtitle: 理解しやすい統計結果の報告の仕方
 format: clean-typst
 author:
-  - name: Your Name
+  - name: Nozomi Niimi
     orcid: 0000-0000-0000-0000
     email: figarofuga@gmail.com
-    affiliations: 東京医療センター
+    affiliations: 東京医療センター総合内科
 date: last-modified
 engine: knitr
+execute: 
+  error: false
+  warning: false
+  echo: false
+  
 ---
 
 # Section Slide as Header Level 1
@@ -35,7 +40,8 @@ Next, we'll brief review some theme-specific components.
 ### Some extra things you can do with the clean theme
 
 ```{r}
-
+#| fig-cap: "tinyplot"
+#| fig-width: 5
 library(tidyverse)
 library(easystats)
 library(tinyplot)
