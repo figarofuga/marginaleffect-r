@@ -2,17 +2,8 @@
 title: Marginal effectsとその周辺
 subtitle: 理解しやすい統計結果の報告の仕方
 format:
-  clean-typst:
-    font-size: 20pt
-    font-heading: Josefin Sans
-    font-body: Montserrat
-    font-weight-heading: "bold"
-    font-weight-body: medium
-    font-size-title: 2.5em
-    font-size-subtitle: 1.5em
-    color-jet: "#272822"
-    color-accent: "009F8C"
-    color-accent2: "B75C9D"
+  revealjs:
+    incremental: true
 author:
   - name: Nozomi Niimi
     orcid: 0000-0000-0000-0000
