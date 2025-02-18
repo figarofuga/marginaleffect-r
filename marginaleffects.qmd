@@ -13,13 +13,19 @@ execute:
   error: false
   warning: false
   echo: false
+bibliography: references.bib
   
 ---
 
-# Section Slide as Header Level 1
+# まず最初に
 
-## Slide Title as Header Level 2
+## 統計学の基本
+### ほとんどの観察研究結果の報告
 
+- 連続値であれば重回帰での係数
+- 0/1であればLogistic回帰
+- 時間の変数であればCox回帰
+  
 ### Subtitle as Header Level 3
 
 You can put any content here, including text, images, tables, code blocks, etc.
