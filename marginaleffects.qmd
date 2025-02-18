@@ -1,7 +1,18 @@
 ---
 title: Marginal effectsとその周辺
 subtitle: 理解しやすい統計結果の報告の仕方
-format: clean-typst
+format:
+  clean-typst:
+    font-size: 20pt
+    font-heading: Josefin Sans
+    font-body: Montserrat
+    font-weight-heading: "bold"
+    font-weight-body: medium
+    font-size-title: 2.5em
+    font-size-subtitle: 1.5em
+    color-jet: "#272822"
+    color-accent: "009F8C"
+    color-accent2: "B75C9D"
 author:
   - name: Nozomi Niimi
     orcid: 0000-0000-0000-0000
@@ -73,17 +84,16 @@ Cross-references
 
 ### A Minimalistic Presentation Theme for Quarto + Typst with Touying
 
-Add the theme to an existing project
+- Quarto supports [Typst CSS](https://quarto.org/docs/advanced/typst/typst-css.html) for simple styling
+- You can change [colors]{style="color: #009F8C"}, [backgrounds]{style="background-color: #F0F0F0"}, and [opacity]{style="opacity: 0.5"} for `span` elements
 
-``` bash
-quarto install extension kazuyanagimoto/quarto-clean-typst
-```
+::: {style="font-size: 30pt; font-family: 'Times New Roman'"}
 
-... or, create a new project using this slide deck as a lean template
+You can also change the font size and family for `div` elements.
 
-``` bash
-quarto use template kazuyanagimoto/quarto-clean-typst
-```
+:::
+
+{{< v 1em >}}
 
 ### Longer Demo
 
