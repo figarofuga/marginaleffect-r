@@ -50,7 +50,7 @@ Next, we'll brief review some theme-specific components.
 ```{r}
 #| fig-cap: "tinyplot"
 #| fig-width: 5
-library(tidyverse)
+library(data.table)
 library(easystats)
 library(tinyplot)
 library(tinytable)
