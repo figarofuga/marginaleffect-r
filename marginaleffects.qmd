@@ -4,9 +4,10 @@ subtitle: 理解しやすい統計結果の報告の仕方
 format:
   revealjs:
     incremental: true
+    css: styles.css
 author:
   - name: Nozomi Niimi
-    orcid: 0000-0000-0000-0000
+    orcid: 0000-0002-6909-0740
     email: figarofuga@gmail.com
     affiliations: 東京医療センター総合内科
 date: last-modified
@@ -16,76 +17,39 @@ execute:
   warning: false
   echo: false
 bibliography: references.bib
-  
+
 ---
 
 # まず最初に
 
+
 ## 統計学の基本
+
 ### ほとんどの観察研究結果の報告
 
 - 連続値であれば重回帰での係数
 - 0/1であればLogistic回帰
 - 時間の変数であればCox回帰
   
-### Subtitle as Header Level 3
+## 重要な変化
 
-You can put any content here, including text, images, tables, code blocks, etc.
+## 例えば
 
--   first unorder list item
-    -   頼む！
-
-1.  first ordered list item
-    1.  A sub item
-
-Next, we'll brief review some theme-specific components.
-
--   Note that *all* of the standard Quarto + Typst [features](https://quarto.org/docs/output-formats/typst.html) can be used with this theme
--   Also, all the [Touying](https://touying-typ.github.io) features can be used by **Typst native code**
-
-## Additional Theme Classes
-
-### Some extra things you can do with the clean theme
 
 ```{r}
-#| fig-cap: "tinyplot"
-#| fig-width: 5
+
 library(data.table)
 library(easystats)
 library(tinyplot)
 library(tinytable)
 
+```
+
+```{r}
+#| fig-cap: "tinyplot"
+#| fig-width: 5
+
 tinyplot::plt(Sepal.Length ~ Sepal.Width | Species, data = iris)
 
 ```
-
--   Special classes for emphasis
-
--   `.alert` class for default emphasis, e.g. [the second accent color]{.alert}.
-
--   `.fg` class for custom color, e.g. [with `options='fill: rgb("#5D639E")'`]{.fg options="fill: rgb(\"#5D639E\")"}.
-
--   `.bg` class for custom background, e.g. [with the default color]{.bg}.
-
-Cross-references
-
--   `.button` class provides a Beamer-like button, e.g. [[Summary](#sec-summary)]{.button}
-
-## Summary {#sec-summary}
-
-### A Minimalistic Presentation Theme for Quarto + Typst with Touying
-
-- Quarto supports [Typst CSS](https://quarto.org/docs/advanced/typst/typst-css.html) for simple styling
-- You can change [colors]{style="color: #009F8C"}, [backgrounds]{style="background-color: #F0F0F0"}, and [opacity]{style="opacity: 0.5"} for `span` elements
-
-::: {style="font-size: 30pt; font-family: 'Times New Roman'"}
-
-You can also change the font size and family for `div` elements.
-
-:::
-
-{{< v 1em >}}
-
-### Longer Demo
-
-For a more comprehensive demo, see the [demo slides](https://kazuyanagimoto.com/quarto-slides-typst/slides/quarto-clean-typst/clean.pdf) and [code](https://github.com/kazuyanagimoto/quarto-slides-typst/blob/main/slides/quarto-clean-typst/clean.qmd)!
+## その上
