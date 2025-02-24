@@ -3,8 +3,8 @@ title: Marginal effectsとその周辺
 subtitle: 理解しやすい統計結果の報告の仕方
 format:
   revealjs:
+    theme: [default, custom-style.scss]
     incremental: true
-    css: styles.css
 author:
   - name: Nozomi Niimi
     orcid: 0000-0002-6909-0740
@@ -17,7 +17,6 @@ execute:
   warning: false
   echo: false
 bibliography: references.bib
-
 ---
 
 # まず最初に
