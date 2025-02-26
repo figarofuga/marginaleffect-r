@@ -4,7 +4,9 @@ subtitle: 理解しやすい統計結果の報告の仕方
 format:
   revealjs:
     theme: [default, custom-style.scss]
-    incremental: true
+    fig-width: 8
+    fig-height: 6
+    incremental: false
 author:
   - name: Nozomi Niimi
     orcid: 0000-0002-6909-0740
@@ -19,28 +21,73 @@ execute:
 bibliography: references.bib
 ---
 
-# まず最初に
-
-
-## 統計学の基本
-
-### ほとんどの観察研究結果の報告
-
-- 連続値であれば重回帰での係数
-- 0/1であればLogistic回帰
-- 時間の変数であればCox回帰
-  
-## 重要な変化
-
-## 例えば
-
-
 ```{r}
 
 library(data.table)
 library(easystats)
 library(tinyplot)
 library(tinytable)
+library(Hmisc)
+library(survival)
+
+```
+
+# まず最初に
+
+## 統計学の基本
+
+### ほとんどの観察研究結果の報告
+
+-   連続値であれば重回帰での係数
+-   0/1であればLogistic回帰
+-   時間の変数であればCox回帰
+
+## これは分かりやすい？
+
+-   Odds ratioって何？
+
+    -   Risk ratioやRisk differenceとどう違う？
+
+-   Hazard ratioってどう解釈すればいい？
+
+```{r}
+rhc <- data.table::fread("rhc.csv")
+veteran <- survival::veteran
+```
+
+## 例えば
+
+```{r}
+
+rhc_prep <- setDT(rhc) |> 
+  datawizard::data_modify(
+  death_days_pre = fcase(
+      death == "Yes", dthdte - sadmdte, 
+      death == "No", max(dschdte, lstctdte, na.rm = TRUE) - sadmdte
+    ), 
+  death_yn = fifelse(
+    death == "Yes" & death_days_pre <= 180, 1, 0
+  ), 
+  death_days = fifelse(death_days_pre <= 180, death_days_pre, 180)
+)
+  
+  
+head(rhc_prep[, .(ptid, death, swang1, age, sex, temp1, alb1, crea1)])
+```
+
+-   Swan-Ganz catheterの有効性を評価した有名な研究(Propensity scoreの先駆けとしても有名)[@Connors1996]
+-   180日でCensorして解析
+
+```{r}
+
+fit <- glm(death_yn ~ swang1 + cat1 + age + sex + race + adld3p + meanbp1 + hrt1 + resp1 , data = rhc_prep, family = binomial)
+
+parameters::model_parameters(fit, exponentiate = TRUE) |> 
+  format(select = "minimal") |> 
+  tinytable::tt() |> 
+  tinytable::style_tt(i = 2, bold = T, color = "red")
+
+
 
 ```
 
@@ -51,4 +98,5 @@ library(tinytable)
 tinyplot::plt(Sepal.Length ~ Sepal.Width | Species, data = iris)
 
 ```
+
 ## その上
