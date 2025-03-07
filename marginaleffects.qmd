@@ -100,3 +100,16 @@ tinyplot::plt(Sepal.Length ~ Sepal.Width | Species, data = iris)
 ```
 
 ## その上
+
+## Odds ratioとRisk ratioの関係
+
+![](image/or_rr.png)
+
+[@Cummings2009-tr]
+
+## 
+
+### References
+
+::: {#refs}
+:::
