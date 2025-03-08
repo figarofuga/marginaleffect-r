@@ -53,6 +53,7 @@ library(survival)
 ```{r}
 rhc <- data.table::fread("rhc.csv")
 veteran <- survival::veteran
+colon <- survival::colon
 ```
 
 ## 例えば
@@ -61,18 +62,17 @@ veteran <- survival::veteran
 
 rhc_prep <- setDT(rhc) |> 
   datawizard::data_modify(
-  death_days_pre = fcase(
-      death == "Yes", dthdte - sadmdte, 
-      death == "No", max(dschdte, lstctdte, na.rm = TRUE) - sadmdte
-    ), 
+      death_01 = fifelse(death == "Yes", 1, 0),
+      death_days_pre = fcase(
+          death == "Yes", dthdte - sadmdte, 
+          death == "No", max(dschdte, lstctdte, na.rm = TRUE) - sadmdte
+        ), 
   death_yn = fifelse(
     death == "Yes" & death_days_pre <= 180, 1, 0
   ), 
   death_days = fifelse(death_days_pre <= 180, death_days_pre, 180)
 )
-  
-  
-head(rhc_prep[, .(ptid, death, swang1, age, sex, temp1, alb1, crea1)])
+
 ```
 
 -   Swan-Ganz catheterの有効性を評価した有名な研究(Propensity scoreの先駆けとしても有名)[@Connors1996]
@@ -80,7 +80,9 @@ head(rhc_prep[, .(ptid, death, swang1, age, sex, temp1, alb1, crea1)])
 
 ```{r}
 
-fit <- glm(death_yn ~ swang1 + cat1 + age + sex + race + adld3p + meanbp1 + hrt1 + resp1 , data = rhc_prep, family = binomial)
+# fit <- glm(death_yn ~ swang1 + age + sex + adld3p + meanbp1 + hrt1 + resp1 + crea1 , data = rhc_prep, family = binomial)
+
+fit <- glm(status ~ rx + age + sex + obstruct + perfor + adhere + surg + nodes, data = colon, family = binomial)
 
 parameters::model_parameters(fit, exponentiate = TRUE) |> 
   format(select = "minimal") |> 
@@ -106,6 +108,10 @@ tinyplot::plt(Sepal.Length ~ Sepal.Width | Species, data = iris)
 ![](image/or_rr.png)
 
 [@Cummings2009-tr]
+
+-   発症率や治療効果が高くないと、OR≒RRと出来る
+
+-   どちらかがずれると、ORはRRに近似出来ない！
 
 ## 
 
