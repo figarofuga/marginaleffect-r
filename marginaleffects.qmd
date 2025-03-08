@@ -62,6 +62,7 @@ colon <- survival::colon
 
 rhc_prep <- setDT(rhc) |> 
   datawizard::data_modify(
+      death_30days = fifelse(death == "Yes", 1, 0),
       death_01 = fifelse(death == "Yes", 1, 0),
       death_days_pre = fcase(
           death == "Yes", dthdte - sadmdte, 
@@ -73,25 +74,48 @@ rhc_prep <- setDT(rhc) |>
   death_days = fifelse(death_days_pre <= 180, death_days_pre, 180)
 )
 
+colon_recurrent <- datawizard::data_filter(colon, etype == 1)
+
+colon_death <- datawizard::data_filter(colon, etype == 2)
+
+
 ```
 
--   Swan-Ganz catheterの有効性を評価した有名な研究(Propensity scoreの先駆けとしても有名)[@Connors1996]
--   180日でCensorして解析
+-   大腸癌のデータセット[@survival-package, @laurie1989]
 
 ```{r}
 
-# fit <- glm(death_yn ~ swang1 + age + sex + adld3p + meanbp1 + hrt1 + resp1 + crea1 , data = rhc_prep, family = binomial)
+# fit <- glm(death_30days ~ swang1 + age + sex + adld3p + meanbp1 + hrt1 + resp1 + crea1 , data = rhc_prep, family = binomial)
 
-fit <- glm(status ~ rx + age + sex + obstruct + perfor + adhere + surg + nodes, data = colon, family = binomial)
+fit <- glm(status ~ rx + age + sex + obstruct + perfor + adhere + surg + nodes, data = colon_death, family = binomial)
 
 parameters::model_parameters(fit, exponentiate = TRUE) |> 
   format(select = "minimal") |> 
   tinytable::tt() |> 
   tinytable::style_tt(i = 2, bold = T, color = "red")
 
-
-
 ```
+
+## 結果の解釈
+
+1.  Levamisoleの治療は経過観察と比べて有意差はなし
+2.  Levamisole + 5-FUは経過観察に比べて予後良好と関連する
+
+## Good news！
+
+![](image/impact_factor.png) [@hegyi2020]
+
+-   NEJM, JAMA, Lancet, ...を目指そう！
+-   でも・・・
+    -   例えば、副作用が30%増えるとして患者さんにどう説明する？
+    -   他にも・・・
+
+## 医学は無料ではない！
+
+![](image/tafamidis.png) [@Maurer2018-rp]
+
+-   9716.5円/Cap x 4 x 365 = 1400万円/年
+-   医療経済的にどう考えればいい？
 
 ```{r}
 #| fig-cap: "tinyplot"
@@ -101,7 +125,20 @@ tinyplot::plt(Sepal.Length ~ Sepal.Width | Species, data = iris)
 
 ```
 
-## その上
+## 医療統計のイロハ
+
+
+-   次のうち最も重要な指標は何でしょうか？
+    -   NNT
+    -   Risk ratio
+    -   Odds ratio
+
+## NNT
+
+-   NNTを出すためにはARRが必要
+-   Risk differencesが重要！
+-   Risk ratioが次に重要
+    -   Odds ratioは重要ではない！
 
 ## Odds ratioとRisk ratioの関係
 
@@ -110,10 +147,71 @@ tinyplot::plt(Sepal.Length ~ Sepal.Width | Species, data = iris)
 [@Cummings2009-tr]
 
 -   発症率や治療効果が高くないと、OR≒RRと出来る
-
 -   どちらかがずれると、ORはRRに近似出来ない！
 
-## 
+## Risk ratio / Risk differenceを出せない理由は？
+
+
+
+```{r}
+
+glmCrude <- glm(formula = death_01 ~ swang1,
+                family  = binomial(link = "logit"),
+                data    = rhc_prep)
+
+glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + ninsclas + cat1 + das2d3pc + dnr1 + ca + surv2md1 + aps1 + scoma1 + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + resp + card + neuro + gastr + renal + meta + hema + seps + trauma + ortho + cardiohx + chfhx + dementhx + psychhx + chrpulhx + renalhx + liverhx + gibledhx + malighx + immunhx + transhx + amihx,
+               family  = binomial(link = "logit"),
+               data    = rhc_prep)
+
+```
+
+## 結果は一つの値に纏められる
+
+## 異質性は？
+
+
+## 例えば、Propensity score analysis
+
+```{r}
+
+```
+
+-   estimand -> 誰に？
+-   どれくらい？
+
+## G-computation
+
+-   本来は、結果のStandardizationの手法
+-   Estimandを決定する方法もある
+
+## How to calculate G-computation
+
+-   元のデータセットを2つ足し算する
+
+
+## G-computationの利点
+
+-   どの群にするかで、ATT, ATE, ATUも計算出来る
+
+## Marginal effects
+
+-   各群での、平均化(周辺化)した値をMarginal effectsという
+    -   反対はConditional effectsという
+-   必要な群でのMarginal effectsこそが重要！！
+
+## Marginal effectsの使い方
+
+
+
+## Marginal effectsを用いる時の注意点
+
+
+## RでのMarginal effectsの使い方
+
+
+## Thank you for your listening!!
+
+
 
 ### References
 
