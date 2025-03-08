@@ -3,6 +3,8 @@ title: Marginal effectsとその周辺
 subtitle: 理解しやすい統計結果の報告の仕方
 format:
   revealjs:
+    width: 1200
+    height: 800
     theme: [default, custom-style.scss]
     fig-width: 8
     fig-height: 6
@@ -127,7 +129,6 @@ tinyplot::plt(Sepal.Length ~ Sepal.Width | Species, data = iris)
 
 ## 医療統計のイロハ
 
-
 -   次のうち最も重要な指標は何でしょうか？
     -   NNT
     -   Risk ratio
@@ -151,8 +152,6 @@ tinyplot::plt(Sepal.Length ~ Sepal.Width | Species, data = iris)
 
 ## Risk ratio / Risk differenceを出せない理由は？
 
-
-
 ```{r}
 
 glmCrude <- glm(formula = death_01 ~ swang1,
@@ -169,14 +168,13 @@ glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + 
 
 ## 異質性は？
 
-
 ## 例えば、Propensity score analysis
 
 ```{r}
 
 ```
 
--   estimand -> 誰に？
+-   estimand -\> 誰に？
 -   どれくらい？
 
 ## G-computation
@@ -187,7 +185,6 @@ glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + 
 ## How to calculate G-computation
 
 -   元のデータセットを2つ足し算する
-
 
 ## G-computationの利点
 
@@ -201,17 +198,11 @@ glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + 
 
 ## Marginal effectsの使い方
 
-
-
 ## Marginal effectsを用いる時の注意点
-
 
 ## RでのMarginal effectsの使い方
 
-
 ## Thank you for your listening!!
-
-
 
 ### References
 
