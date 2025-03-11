@@ -1,6 +1,6 @@
 ---
 title: Marginal effectsとその周辺
-subtitle: 理解しやすい統計結果の報告の仕方
+subtitle: 多変量回帰・・・好きですか？
 format:
   revealjs:
     width: 1200
@@ -24,39 +24,138 @@ bibliography: references.bib
 ---
 
 ```{r}
-
 library(data.table)
 library(easystats)
 library(tinyplot)
 library(tinytable)
 library(Hmisc)
 library(survival)
-
 ```
 
-# まず最初に
 
-## 統計学の基本
+## 皆さん多変量回帰は好きですか？
 
-### ほとんどの観察研究結果の報告
+-    古くから研究されつくされており、信頼感がある
+-    多くの統計ソフトに入っており、行うのが簡単
+-    <div class="red">*解釈性が高く、分かりやすい*</div>
+-    本当？
 
--   連続値であれば重回帰での係数
--   0/1であればLogistic回帰
--   時間の変数であればCox回帰
+## 多変量回帰は簡単？
 
-## これは分かりやすい？
+-    多変量回帰は多くの種類がある
+-    連続値であれば重回帰
+-    間に、多くのリンク関数を挟んでGLM
+        -    0/1でLogistic回帰
+        -    整数値だとPoisson回帰
+        -    順序ロジット
+        -    Censored regression(Cox回帰もこのうち)
+-    選択肢が多く、その分どうすればよいのか分からない！
 
--   Odds ratioって何？
 
-    -   Risk ratioやRisk differenceとどう違う？
+## 例えば、Logistic regressionの場合
 
--   Hazard ratioってどう解釈すればいい？
+ロジスティック回帰は、確率$P(Y = 1 | X)$ をロジット関数（対数オッズ）でモデリングする回帰モデルである。
+
+1. 確率のモデル式
+
+\[
+P(Y = 1 | X) = \frac{1}{1 + e^{-(\beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + \beta_p X_p)}}
+\]
+
+2. ロジット変換（対数オッズ）
+\[
+\log \left( \frac{P(Y=1 | X)}{1 - P(Y=1 | X)} \right) = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + \beta_p X_p
+\]
+
+ここで：
+- $Y$ は二値（0 または 1）の従属変数
+- $X_1, X_2, \dots, X_p$ は説明変数
+- $\beta_0$ は切片（intercept）
+- $\beta_1, \beta_2, \dots, \beta_p$ は回帰係数
+- $e$ はネイピア数（約 2.718）
+
+このモデルにより、入力変数 $X$ の変化に応じた $Y = 1$ となる確率を推定することができる。
+
+-    出てくる数値はOdds ratio
+-    Odds ratioってなんですか？
+
+## Odds ratioって？
+
+-    ＠＠になるOddsの比
+-    Risk比やRisk差のほうが直感的ではある
+
+## Odds ratioとRisk ratioの違い
+
+-    発症が稀だとORとRRは近似可能
+-    ORは常にRRより0より遠くなる
+-    ORの利点もあるが、**説明可能性は下がる**
+
+## その上
+
+-    変数の扱い
+
+
+## 例えば・・・・・・
+
+-    Interactionの存在
+-    連続値の扱い
+
+## 連続値の扱い1
+
+-    通常は線形として扱う
+-    しかし、連続値であっても線形である事は少ない
+    -    BMIや血圧はJ曲線
+-    Log？exponentiate？累乗？
+
+## 連続値の扱い2
+
+-    最近だと、Spline(特にRestricted cubic spline)が多い
+-    RCS解析やったこと・・・・・・ありますか？
+
+## RCSの解析
+
+-    結果を提示
 
 ```{r}
 rhc <- data.table::fread("rhc.csv")
 veteran <- survival::veteran
 colon <- survival::colon
 ```
+
+## じゃあ、どうすれば？
+
+-    Frank HarrellのBlogを紹介
+
+## Marginal effectsという選択肢
+
+-    G-computationについて
+
+## G-computation
+
+-   本来は、結果のStandardizationの手法
+-   Estimandを決定する方法もある
+
+## G-computationの考え方
+
+-    まずはOutcomeを予測するモデルを作る
+    -    これは、どんな形で、どんな非線形項があっても良い
+-    元データで、Intervention以外をコピーして、Interventionをすべて0にしたサブデータを作成(data0)
+-    同様にして、Interventionをすべて1にしたサブデータを作成(data1)
+-    data1とdata0のアウトカムの差を平均すると、治療効果の平均(ATE)が推定出来る
+
+## G computationの応用
+
+-    元データのうち、元々Interventionが1の群だけで同様の事をするとATT
+-    元データのうち、元々Interventionが0の群だけで同様の事をするとATU　も推定可能
+
+## Average marginal prediction
+
+## Average ?
+
+
+## Box先生の名言
+
+> すべてのモデルは誤っている。しかし、そのうちのいくつかは役に立つ。
 
 ## 例えば
 
@@ -127,19 +226,6 @@ tinyplot::plt(Sepal.Length ~ Sepal.Width | Species, data = iris)
 
 ```
 
-## 医療統計のイロハ
-
--   次のうち最も重要な指標は何でしょうか？
-    -   NNT
-    -   Risk ratio
-    -   Odds ratio
-
-## NNT
-
--   NNTを出すためにはARRが必要
--   Risk differencesが重要！
--   Risk ratioが次に重要
-    -   Odds ratioは重要ではない！
 
 ## Odds ratioとRisk ratioの関係
 
@@ -177,18 +263,6 @@ glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + 
 -   estimand -\> 誰に？
 -   どれくらい？
 
-## G-computation
-
--   本来は、結果のStandardizationの手法
--   Estimandを決定する方法もある
-
-## How to calculate G-computation
-
--   元のデータセットを2つ足し算する
-
-## G-computationの利点
-
--   どの群にするかで、ATT, ATE, ATUも計算出来る
 
 ## Marginal effects
 
@@ -196,9 +270,6 @@ glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + 
     -   反対はConditional effectsという
 -   必要な群でのMarginal effectsこそが重要！！
 
-## Marginal effectsの使い方
-
-## Marginal effectsを用いる時の注意点
 
 ## RでのMarginal effectsの使い方
 
