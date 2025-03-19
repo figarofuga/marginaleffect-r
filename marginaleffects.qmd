@@ -150,8 +150,23 @@ colon <- survival::colon
 
 ## Average marginal prediction
 
-## Average ?
+通常のアウトカム式のみで一発勝負
+ここはDoubly robustは使っちゃいけない
 
+## 因果関係の場合
+
+SUTVAの原理
+
+## そのため・・・・・・
+
+例えば、Matching→G computation
+あるいは、元々のInclusionを入れて除外したあとにIPW→アウトカム式を入れる
+そうすることでDoubly robust estimationとなる
+
+## どういう式を作る？
+
+基本は、ドメイン知識を入れる
+ただし、どのような関係性かをみるのにはAICとか、尤度比検定をしても良いかも
 
 ## Box先生の名言
 
