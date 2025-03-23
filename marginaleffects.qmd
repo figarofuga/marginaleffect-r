@@ -51,6 +51,34 @@ library(survival)
         -    Censored regression(Cox回帰もこのうち)
 -    選択肢が多く、その分どうすればよいのか分からない！
 
+```{r}
+N <- 1000
+
+set.seed(42)
+x <- runif(n = N, min = 0, max = 100)
+
+y <- (-20) +x * 1.5 + rnorm(n = N, sd = 5)
+
+dat <- data.table::data.table(x = x, 
+                       y = y)[, `:=`(new_y = fcase(y <= 0, 0, 
+                                               y >= 100, 100, 
+                                               default = y), 
+                                     col = fifelse((y <= 0 | y >= 100), 1, 2))]
+
+
+tinyplot::plt(y ~ x | col, data = dat, fill = 0.3, palette = "ggplot2")
+tinyplot::plt(new_y ~ x | col, data = dat, add = T)
+
+bar_dat <- data.frame(
+    Percentage = c(1, 3, 5, 4, 3, 7, 3, 1),
+    x = rep(c("medication", "ablation"), each = 4), 
+    NYHA = rep(c("I", "II", "III", "IV"), 2)
+)
+
+plotthis::TrendPlot(bar_dat, x = "x", y = "Percentage", group_by = "NYHA", scale_y = TRUE, title = "NYHA and 1-year treatment")
+
+```
+
 
 ## 例えば、Logistic regressionの場合
 
