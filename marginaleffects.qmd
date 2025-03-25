@@ -125,6 +125,32 @@ cowplot::plot_grid(plotlist = list(p1, p2, p3), nrow = 1)
         -    Censored regression(Cox回帰もこのうち)
 -    選択肢が多く、その分どうすればよいのか分からない！
 
+```{r}
+rhc <- data.table::fread("rhc.csv")
+veteran <- survival::veteran
+colon <- survival::colon
+
+rhc_prep <- setDT(rhc) |> 
+  datawizard::data_modify(
+      death_30days = fifelse(death == "Yes", 1, 0),
+      death_01 = fifelse(death == "Yes", 1, 0),
+      death_days_pre = fcase(
+          death == "Yes", dthdte - sadmdte, 
+          death == "No", max(dschdte, lstctdte, na.rm = TRUE) - sadmdte
+        ), 
+  death_yn = fifelse(
+    death == "Yes" & death_days_pre <= 180, 1, 0
+  ), 
+  death_days = fifelse(death_days_pre <= 180, death_days_pre, 180)
+)
+
+colon_recurrent <- datawizard::data_filter(colon, etype == 1)
+
+colon_death <- datawizard::data_filter(colon, etype == 2)
+
+lrm(death_01 ~ rcs(age, 4), data = rhc_prep)
+
+```
 
 ## 例えば、Logistic regressionの場合
 
@@ -190,11 +216,7 @@ P(Y = 1 | X) = \frac{1}{1 + e^{-(\beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + \
 
 -    結果を提示
 
-```{r}
-rhc <- data.table::fread("rhc.csv")
-veteran <- survival::veteran
-colon <- survival::colon
-```
+
 
 ## じゃあ、どうすれば？
 
@@ -250,23 +272,6 @@ SUTVAの原理
 
 ```{r}
 
-rhc_prep <- setDT(rhc) |> 
-  datawizard::data_modify(
-      death_30days = fifelse(death == "Yes", 1, 0),
-      death_01 = fifelse(death == "Yes", 1, 0),
-      death_days_pre = fcase(
-          death == "Yes", dthdte - sadmdte, 
-          death == "No", max(dschdte, lstctdte, na.rm = TRUE) - sadmdte
-        ), 
-  death_yn = fifelse(
-    death == "Yes" & death_days_pre <= 180, 1, 0
-  ), 
-  death_days = fifelse(death_days_pre <= 180, death_days_pre, 180)
-)
-
-colon_recurrent <- datawizard::data_filter(colon, etype == 1)
-
-colon_death <- datawizard::data_filter(colon, etype == 2)
 
 
 ```
@@ -307,14 +312,6 @@ parameters::model_parameters(fit, exponentiate = TRUE) |>
 -   9716.5円/Cap x 4 x 365 = 1400万円/年
 -   医療経済的にどう考えればいい？
 
-```{r}
-#| fig-cap: "tinyplot"
-#| fig-width: 5
-
-tinyplot::plt(Sepal.Length ~ Sepal.Width | Species, data = iris)
-
-```
-
 
 ## Odds ratioとRisk ratioの関係
 
@@ -328,6 +325,9 @@ tinyplot::plt(Sepal.Length ~ Sepal.Width | Species, data = iris)
 ## Risk ratio / Risk differenceを出せない理由は？
 
 ```{r}
+glm(formula = death_01 ~ swang1,
+                family  = binomial(link = "logit"),
+                data    = rhc_prep)
 
 glmCrude <- glm(formula = death_01 ~ swang1,
                 family  = binomial(link = "logit"),
