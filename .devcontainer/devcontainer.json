@@ -10,7 +10,7 @@
         "packages": "fonts-noto-cjk,fonts-ipaexfont"
     },
 		"ghcr.io/rocker-org/devcontainer-features/r-packages:1": {
-			"packages": "data.table,here,skimr,janitor,easystats,ExclusionTable,tinytable,tinyplot,tableone,cowplot,plotthis,finalfit,modelsummary,marginaleffects,broom,rms,Hmisc,VGAM"
+			"packages": "data.table,here,skimr,janitor,easystats,ExclusionTable,tinytable,tinyplot,tableone,cowplot,plotthis,latticeExtra,finalfit,modelsummary,marginaleffects,broom,rms,Hmisc,VGAM"
 		},
 		"ghcr.io/rocker-org/devcontainer-features/rstudio-server:0": {}
 	},

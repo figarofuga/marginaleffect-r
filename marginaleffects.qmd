@@ -30,6 +30,8 @@ library(tinyplot)
 library(tinytable)
 library(Hmisc)
 library(survival)
+library(plotthis)
+library(cowplot)
 ```
 
 
@@ -52,6 +54,7 @@ library(survival)
 -    選択肢が多く、その分どうすればよいのか分からない！
 
 ```{r}
+
 N <- 1000
 
 set.seed(42)
@@ -65,17 +68,17 @@ dat <- data.table::data.table(x = x,
                                                default = y), 
                                      col = fifelse((y <= 0 | y >= 100), 1, 2))]
 
-
-tinyplot::plt(y ~ x | col, data = dat, fill = 0.3, palette = "ggplot2")
-tinyplot::plt(new_y ~ x | col, data = dat, add = T)
-
 bar_dat <- data.frame(
-    Percentage = c(1, 3, 5, 4, 3, 7, 3, 1),
+    Percentage = c(10, 20, 50, 30, 30, 50, 30, 10),
     x = rep(c("medication", "ablation"), each = 4), 
     NYHA = rep(c("I", "II", "III", "IV"), 2)
 )
 
-plotthis::TrendPlot(bar_dat, x = "x", y = "Percentage", group_by = "NYHA", scale_y = TRUE, title = "NYHA and 1-year treatment")
+tinyplot::plt(y ~ x | col, data = dat, fill = 0.3, palette = "ggplot2")
+tinyplot::plt(new_y ~ x | col, data = dat, add = T)
+tinyplot::plt(I(y > 30) ~ x, data = dat, type = type_glm(family = "binomial"))
+
+p3 <- plotthis::TrendPlot(bar_dat, x = "x", y = "Percentage", group_by = "NYHA", scale_y = TRUE, title = "NYHA and 1-year treatment")
 
 ```
 
