@@ -27,9 +27,11 @@ bibliography: references.bib
 library(data.table)
 library(easystats)
 library(ggplot2)
-library(tinyplot)
+library(ggsurvfit)
+# library(tinyplot)
 library(tinytable)
 library(Hmisc)
+library(rms)
 library(survival)
 library(plotthis)
 library(cowplot)
@@ -44,6 +46,20 @@ library(cowplot)
 -    本当？
 
 ## 多変量回帰は簡単？ {.smaller}
+:::: {.columns}
+
+::: {.column width="50%"}
+
+-    多変量回帰は多くの種類がある
+        -    0/1でLogistic回帰
+        -    整数値だとPoisson回帰
+        -    順序ロジット
+        -    Censored regression(Cox回帰もこのうち)
+-    選択肢が多く、その分どうすればよいのか分からない！
+
+:::
+
+::: {.column width="50%"}
 
 ```{r}
 #| warning: false
@@ -111,19 +127,28 @@ p3 <- ggplot(bar_data, aes(fill=NYHA, y=value, x=trt)) +
     scale_y_continuous(expand = c(0, 0)) + 
     labs(title = "Ordered regression")
 
-cowplot::plot_grid(plotlist = list(p1, p2, p3), nrow = 1)
+p4 <- ggsurvfit::survfit2(Surv(time, status) ~ adhere, data = survival::colon) |> 
+  ggsurvfit::ggsurvfit() + 
+  labs(title = "Cox proportional hazard model") + 
+  cowplot::theme_cowplot()
+
+cowplot::plot_grid(plotlist = list(p1, p2, p3, p4), nrow = 2)
 
 ```
 
-\n
--    多変量回帰は多くの種類がある
--    連続値であれば重回帰
--    間に、多くのリンク関数を挟んでGLM
-        -    0/1でLogistic回帰
-        -    整数値だとPoisson回帰
-        -    順序ロジット
-        -    Censored regression(Cox回帰もこのうち)
--    選択肢が多く、その分どうすればよいのか分からない！
+:::
+
+::::
+
+
+
+
+## その上
+
+-    中の式も複雑になっている
+    -   交互作用    
+    -   非線形の関係はどうやって表す？
+    -   restricted cubic splineなど
 
 ```{r}
 rhc <- data.table::fread("rhc.csv")
@@ -154,30 +179,7 @@ lrm(death_01 ~ rcs(age, 4), data = rhc_prep)
 
 ## 例えば、Logistic regressionの場合
 
-ロジスティック回帰は、確率$P(Y = 1 | X)$ をロジット関数（対数オッズ）でモデリングする回帰モデルである。
 
-1. 確率のモデル式
-
-\[
-P(Y = 1 | X) = \frac{1}{1 + e^{-(\beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + \beta_p X_p)}}
-\]
-
-2. ロジット変換（対数オッズ）
-\[
-\log \left( \frac{P(Y=1 | X)}{1 - P(Y=1 | X)} \right) = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + \beta_p X_p
-\]
-
-ここで：
-- $Y$ は二値（0 または 1）の従属変数
-- $X_1, X_2, \dots, X_p$ は説明変数
-- $\beta_0$ は切片（intercept）
-- $\beta_1, \beta_2, \dots, \beta_p$ は回帰係数
-- $e$ はネイピア数（約 2.718）
-
-このモデルにより、入力変数 $X$ の変化に応じた $Y = 1$ となる確率を推定することができる。
-
--    出てくる数値はOdds ratio
--    Odds ratioってなんですか？
 
 ## Odds ratioって？
 
