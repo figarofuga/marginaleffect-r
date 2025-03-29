@@ -28,7 +28,7 @@ library(data.table)
 library(easystats)
 library(ggplot2)
 library(ggsurvfit)
-# library(tinyplot)
+library(plotly)
 library(tinytable)
 library(Hmisc)
 library(rms)
@@ -37,30 +37,31 @@ library(plotthis)
 library(cowplot)
 ```
 
-
 ## 皆さん多変量回帰は好きですか？
 
--    古くから研究されつくされており、信頼感がある
--    多くの統計ソフトに入っており、行うのが簡単
--    <div class="red">*解釈性が高く、分かりやすい*</div>
--    本当？
+-   古くから研究されつくされており、信頼感がある
+
+-   多くの統計ソフトに入っており、行うのが簡単
+
+-   ::: red
+    *解釈性が高く、分かりやすい*
+    :::
+
+-   本当？
 
 ## 多変量回帰は簡単？ {.smaller}
-:::: {.columns}
 
+::::: columns
 ::: {.column width="50%"}
-
--    多変量回帰は多くの種類がある
-        -    0/1でLogistic回帰
-        -    整数値だとPoisson回帰
-        -    順序ロジット
-        -    Censored regression(Cox回帰もこのうち)
--    選択肢が多く、その分どうすればよいのか分からない！
-
+-   多変量回帰は多くの種類がある
+    -   0/1でLogistic回帰
+    -   整数値だとPoisson回帰
+    -   順序ロジット
+    -   Censored regression(Cox回帰もこのうち)
+-   選択肢が多く、その分どうすればよいのか分からない！
 :::
 
 ::: {.column width="50%"}
-
 ```{r}
 #| warning: false
 #| fig-cap: "Many regression species"
@@ -135,25 +136,19 @@ p4 <- ggsurvfit::survfit2(Surv(time, status) ~ adhere, data = survival::colon) |
 cowplot::plot_grid(plotlist = list(p1, p2, p3, p4), nrow = 2)
 
 ```
-
 :::
-
-::::
-
-
-
+:::::
 
 ## その上
 
--    中の式も複雑になっている
-    -   交互作用    
-    -   非線形の関係はどうやって表す？
-    -   restricted cubic splineなど
+-   中の式も複雑になっている - 交互作用\
+    - 非線形の関係はどうやって表す？ - restricted cubic splineなど
 
 ```{r}
 rhc <- data.table::fread("rhc.csv")
 veteran <- survival::veteran
 colon <- survival::colon
+
 
 rhc_prep <- setDT(rhc) |> 
   datawizard::data_modify(
@@ -166,67 +161,73 @@ rhc_prep <- setDT(rhc) |>
   death_yn = fifelse(
     death == "Yes" & death_days_pre <= 180, 1, 0
   ), 
-  death_days = fifelse(death_days_pre <= 180, death_days_pre, 180)
+  death_days = fifelse(death_days_pre <= 180, death_days_pre, 180), 
+  alb1 = fifelse(alb1 > 7, NA_real_, alb1)
 )
+
+dd <- rms::datadist(rhc_prep)
+options("datadist" = dd)
 
 colon_recurrent <- datawizard::data_filter(colon, etype == 1)
 
 colon_death <- datawizard::data_filter(colon, etype == 2)
 
-lrm(death_01 ~ rcs(age, 4), data = rhc_prep)
+spline_fit <- lrm(death_01 ~ rcs(age, 4) + rcs(crea1, 4) + cat1 + sex + meanbp1 + hrt1 + resp1 + alb1, data = rhc_prep)
+
+spline_dat <- Predict(spline_fit, age = seq(0, 100, by = 2), crea1 = seq(0, 10, 0.2)) |> 
+  dplyr::rename(`Odds ratio` = yhat, 
+                Cr = crea1, 
+                Age = age)
+
+plot_ly(spline_dat, x = ~Age, y = ~Cr, z = ~`Odds ratio`) |>
+      add_trace(type="mesh3d") 
 
 ```
 
 ## 例えば、Logistic regressionの場合
 
-
-
 ## Odds ratioって？
 
--    ＠＠になるOddsの比
--    Risk比やRisk差のほうが直感的ではある
+-   ＠＠になるOddsの比
+-   Risk比やRisk差のほうが直感的ではある
 
 ## Odds ratioとRisk ratioの違い
 
--    発症が稀だとORとRRは近似可能
--    ORは常にRRより0より遠くなる
--    ORの利点もあるが、**説明可能性は下がる**
+-   発症が稀だとORとRRは近似可能
+-   ORは常にRRより0より遠くなる
+-   ORの利点もあるが、**説明可能性は下がる**
 
 ## その上
 
--    変数の扱い
-
+-   変数の扱い
 
 ## 例えば・・・・・・
 
--    Interactionの存在
--    連続値の扱い
+-   Interactionの存在
+-   連続値の扱い
 
 ## 連続値の扱い1
 
--    通常は線形として扱う
--    しかし、連続値であっても線形である事は少ない
-    -    BMIや血圧はJ曲線
--    Log？exponentiate？累乗？
+-   通常は線形として扱う
+-   しかし、連続値であっても線形である事は少ない - BMIや血圧はJ曲線
+-   Log？exponentiate？累乗？
 
 ## 連続値の扱い2
 
--    最近だと、Spline(特にRestricted cubic spline)が多い
--    RCS解析やったこと・・・・・・ありますか？
+-   最近だと、Spline(特にRestricted cubic spline)が多い
+-   RCS解析やったこと・・・・・・ありますか？
 
 ## RCSの解析
 
--    結果を提示
-
-
+-   結果を提示
 
 ## じゃあ、どうすれば？
 
--    Frank HarrellのBlogを紹介
+-   Frank HarrellのBlogを紹介
 
 ## Marginal effectsという選択肢
 
--    G-computationについて
+-   G-computationについて
 
 ## G-computation
 
@@ -235,21 +236,19 @@ lrm(death_01 ~ rcs(age, 4), data = rhc_prep)
 
 ## G-computationの考え方
 
--    まずはOutcomeを予測するモデルを作る
-    -    これは、どんな形で、どんな非線形項があっても良い
--    元データで、Intervention以外をコピーして、Interventionをすべて0にしたサブデータを作成(data0)
--    同様にして、Interventionをすべて1にしたサブデータを作成(data1)
--    data1とdata0のアウトカムの差を平均すると、治療効果の平均(ATE)が推定出来る
+-   まずはOutcomeを予測するモデルを作る - これは、どんな形で、どんな非線形項があっても良い
+-   元データで、Intervention以外をコピーして、Interventionをすべて0にしたサブデータを作成(data0)
+-   同様にして、Interventionをすべて1にしたサブデータを作成(data1)
+-   data1とdata0のアウトカムの差を平均すると、治療効果の平均(ATE)が推定出来る
 
 ## G computationの応用
 
--    元データのうち、元々Interventionが1の群だけで同様の事をするとATT
--    元データのうち、元々Interventionが0の群だけで同様の事をするとATU　も推定可能
+-   元データのうち、元々Interventionが1の群だけで同様の事をするとATT
+-   元データのうち、元々Interventionが0の群だけで同様の事をするとATU　も推定可能
 
 ## Average marginal prediction
 
-通常のアウトカム式のみで一発勝負
-ここはDoubly robustは使っちゃいけない
+通常のアウトカム式のみで一発勝負 ここはDoubly robustは使っちゃいけない
 
 ## 因果関係の場合
 
@@ -257,14 +256,11 @@ SUTVAの原理
 
 ## そのため・・・・・・
 
-例えば、Matching→G computation
-あるいは、元々のInclusionを入れて除外したあとにIPW→アウトカム式を入れる
-そうすることでDoubly robust estimationとなる
+例えば、Matching→G computation あるいは、元々のInclusionを入れて除外したあとにIPW→アウトカム式を入れる そうすることでDoubly robust estimationとなる
 
 ## どういう式を作る？
 
-基本は、ドメイン知識を入れる
-ただし、どのような関係性かをみるのにはAICとか、尤度比検定をしても良いかも
+基本は、ドメイン知識を入れる ただし、どのような関係性かをみるのにはAICとか、尤度比検定をしても良いかも
 
 ## Box先生の名言
 
@@ -314,7 +310,6 @@ parameters::model_parameters(fit, exponentiate = TRUE) |>
 -   9716.5円/Cap x 4 x 365 = 1400万円/年
 -   医療経済的にどう考えればいい？
 
-
 ## Odds ratioとRisk ratioの関係
 
 ![](image/or_rr.png)
@@ -354,13 +349,11 @@ glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + 
 -   estimand -\> 誰に？
 -   どれくらい？
 
-
 ## Marginal effects
 
 -   各群での、平均化(周辺化)した値をMarginal effectsという
     -   反対はConditional effectsという
 -   必要な群でのMarginal effectsこそが重要！！
-
 
 ## RでのMarginal effectsの使い方
 
