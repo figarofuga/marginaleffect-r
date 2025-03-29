@@ -172,6 +172,11 @@ colon_recurrent <- datawizard::data_filter(colon, etype == 1)
 
 colon_death <- datawizard::data_filter(colon, etype == 2)
 
+interact_fit <- lrm(death_01 ~ age * sex + crea1 + meanbp1 + hrt1 + resp1 + alb1, data = rhc_prep)
+
+parameters::model_parameters(interact_fit, exponentiate = T) |> 
+  plot()
+
 spline_fit <- lrm(death_01 ~ rcs(age, 4) + rcs(crea1, 4) + cat1 + sex + meanbp1 + hrt1 + resp1 + alb1, data = rhc_prep)
 
 spline_dat <- Predict(spline_fit, age = seq(0, 100, by = 2), crea1 = seq(0, 10, 0.2)) |> 
