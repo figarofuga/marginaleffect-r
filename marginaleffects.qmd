@@ -8,7 +8,8 @@ format:
     theme: [default, custom-style.scss]
     fig-width: 8
     fig-height: 6
-    incremental: false
+    scrollable: true
+    embed-resources: true
 author:
   - name: Nozomi Niimi
     orcid: 0000-0002-6909-0740
@@ -145,6 +146,7 @@ cowplot::plot_grid(plotlist = list(p1, p2, p3, p4), nrow = 2)
     - 非線形の関係はどうやって表す？ - restricted cubic splineなど
 
 ```{r}
+
 rhc <- data.table::fread("rhc.csv")
 veteran <- survival::veteran
 colon <- survival::colon
@@ -177,68 +179,77 @@ interact_fit <- lrm(death_01 ~ age * sex + crea1 + meanbp1 + hrt1 + resp1 + alb1
 parameters::model_parameters(interact_fit, exponentiate = T) |> 
   plot()
 
-spline_fit <- lrm(death_01 ~ rcs(age, 4) + crea1 + cat1 + sex + meanbp1 + hrt1 + resp1 + alb1, data = rhc_prep)
-
-spline_fig1 <- Predict(spline_fit, age, fun = exp) |> 
-  ggplot()
-
-spline_fit2 <- lrm(death_01 ~ rcs(age, 4) * rcs(crea1, 4) + cat1 + sex + meanbp1 + hrt1 + resp1 + alb1, data = rhc_prep)
 
 
 ```
 
-## 例えば、Logistic regressionの場合
+## 例えば、2つの連続値をSplineで表した場合～1
 
 ```{r}
+
+options(prType='html')   # for print, summary, anova
+
+spline_fit2 <- lrm(death_01 ~ rcs(age, 4) * rcs(crea1, 4) + sex + meanbp1 + hrt1 + resp1 + alb1, data = rhc_prep)
+
+print(spline_fit2)
+```
+
+## 例えば、2つの連続値をSplineで表したの場合～2
+
+:::: {.columns}
+
+::: {.column width="40%"}
+```{r}
+
+spline_fit2 <- lrm(death_01 ~ rcs(age, 4) * rcs(crea1, 4) + sex + meanbp1 + hrt1 + resp1 + alb1, data = rhc_prep)
 
 spline_dat2 <- Predict(spline_fit2, age = seq(0, 100, by = 2), crea1 = seq(0, 10, 0.2)) |> 
   dplyr::rename(`Odds ratio` = yhat, 
                 Cr = crea1, 
                 Age = age)
 
-plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`) |>
-      add_trace(type="mesh3d") 
-      
+spline_fig1 <- Predict(spline_fit2, age, fun = exp) |> 
+  ggplot() + 
+  labs(title = "Spline curve for one variables")
+
+spline_fig1
+
 ```
 
-## Odds ratioって？
+:::
 
--   ＠＠になるOddsの比
--   Risk比やRisk差のほうが直感的ではある
+::: {.column width="60%"}
 
-## Odds ratioとRisk ratioの違い
+```{r}
 
--   発症が稀だとORとRRは近似可能
--   ORは常にRRより0より遠くなる
--   ORの利点もあるが、**説明可能性は下がる**
+plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`, opacity = 0.5) |>
+      add_trace(type="mesh3d") |>
+      layout(
+    title = list(
+      text = "3D association with two continuous variables with splines",
+      font = list(size = 18),
+      x = 0.5  # タイトルを中央に（0が左、1が右）
+    )
+  )
 
-## その上
+```
 
--   変数の扱い
+:::
 
-## 例えば・・・・・・
+-   本当のSplineでこんな感じ
+-   どういう意味ですか？
 
--   Interactionの存在
--   連続値の扱い
+::::
 
-## 連続値の扱い1
+## 我々はどこにいる？
 
--   通常は線形として扱う
--   しかし、連続値であっても線形である事は少ない - BMIや血圧はJ曲線
--   Log？exponentiate？累乗？
+![](image/zetsubou.png)
 
-## 連続値の扱い2
 
--   最近だと、Spline(特にRestricted cubic spline)が多い
--   RCS解析やったこと・・・・・・ありますか？
-
-## RCSの解析
-
--   結果を提示
-
-## じゃあ、どうすれば？
+## もっと
 
 -   Frank HarrellのBlogを紹介
+
 
 ## Marginal effectsという選択肢
 
