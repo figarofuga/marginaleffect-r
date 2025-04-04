@@ -4,15 +4,20 @@
 /*-- scss:rules --*/
 // 以下でCSSルールを作成する
 
-.reveal h1 {
+.reveal section h1 {
     color: #2c3e50;
-    font-size: 2em;
+    font-size: 36px !important;
     text-align: center;
   }
   
-.reveal h2 {
+.reveal section h2 {
     color: #34495e;
-    font-size: 1.5em;
+    font-size: 36px !important;
+    text-align: left;
+  }
+
+.reveal section p {
+    font-size: 24px !important;
     text-align: left;
   }
 
