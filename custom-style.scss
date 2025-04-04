@@ -6,20 +6,25 @@
 
 .reveal section h1 {
     color: #2c3e50;
-    font-size: 36px !important;
+    font-size: 48px !important;
     text-align: center;
   }
   
 .reveal section h2 {
     color: #34495e;
-    font-size: 36px !important;
+    font-size: 48px !important;
     text-align: left;
   }
 
 .reveal section p {
-    font-size: 24px !important;
+    font-size: 0.8em !important;
     text-align: left;
   }
+
+.reveal section li {
+    font-size: 0.8em !important;
+    text-align: left;
+  }  
 
 .reveal h3 {
     color: #34495e;
@@ -28,3 +33,36 @@
     text-indent: 1em;
 
   }
+
+.reveal .title {
+    color: #34495e;
+    font-size: 1em;
+    text-align: center;
+    text-indent: 1em;
+
+  }
+
+.reveal .subtitle {
+    color: #34495e;
+    font-size: 0.8em;
+    text-align: center;
+    text-indent: 1em;
+
+  }
+
+.reveal .author {
+    color: #34495e;
+    font-size: 0.8em;
+    text-align: center;
+    text-indent: 1em;
+
+  }
+
+.reveal .date {
+    color: #34495e;
+    font-size: 0.8em;
+    text-align: center;
+    text-indent: 1em;
+
+  }
+
