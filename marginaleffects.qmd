@@ -182,6 +182,11 @@ parameters::model_parameters(interact_fit, exponentiate = T) |>
 
 
 ```
+## Interactionの意味は？
+
+-   Subgroup解析の意味って？
+    -   結果の一貫性を示す？
+    -   結果の異質性を示す？
 
 ## 例えば、2つの連続値をSplineで表した場合～1
 
@@ -246,10 +251,69 @@ plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`, opacity = 0.5) |>
 ![](image/zetsubou.png)
 
 
-## もっと
+## Logistic regressionの結果の解釈
 
--   Frank HarrellのBlogを紹介
+-   Odds ratioとは？
+-   我々が使う数は？
+    -   実はRisk difference
 
+## Odds ratioとRisk ratioの関係
+
+![](image/or_rr.png)
+
+[@Cummings2009-tr]
+
+-   発症率や治療効果が高くないと、OR≒RRと出来る
+-   どちらかがずれると、ORはRRに近似出来ない！
+
+## Risk ratio/Risk differenceは1つの数値で良いのか？
+
+::::: columns
+::: {.column width="50%"}
+✕
+
+![](image/harrel_bin_text.png)
+              
+-   集団全体の治療効果判定のみ
+-   患者のRiskによって治療効果は異なるはず
+
+:::
+
+::: {.column width="50%"}
+◯
+
+![](image/harrel_binomial.png)
+
+
+:::
+
+::::
+
+## Risk ratio / Risk differenceを出せない理由は？
+
+```{r}
+glm(formula = death_01 ~ swang1,
+                family  = binomial(link = "logit"),
+                data    = rhc_prep)
+
+glmCrude <- glm(formula = death_01 ~ swang1,
+                family  = binomial(link = "logit"),
+                data    = rhc_prep)
+
+glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + ninsclas + cat1 + das2d3pc + dnr1 + ca + surv2md1 + aps1 + scoma1 + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + resp + card + neuro + gastr + renal + meta + hema + seps + trauma + ortho + cardiohx + chfhx + dementhx + psychhx + chrpulhx + renalhx + liverhx + gibledhx + malighx + immunhx + transhx + amihx,
+               family  = binomial(link = "logit"),
+               data    = rhc_prep)
+
+```
+
+
+## ここまでの纏め
+
+-   多変量解析は解釈がわかりにくい！
+    -   特に、InteractionやSplineが入るとよりわかりにくい
+    -   通常の解析だと、結果は集団全体の平均で丸め込まれてしまう
+        -   Realな治療効果はBaselineのRiskでも変わるはず！
+    -   どうすればいい？
 
 ## Marginal effectsという選択肢
 
@@ -336,41 +400,6 @@ parameters::model_parameters(fit, exponentiate = TRUE) |>
 -   9716.5円/Cap x 4 x 365 = 1400万円/年
 -   医療経済的にどう考えればいい？
 
-## Odds ratioとRisk ratioの関係
-
-![](image/or_rr.png)
-
-[@Cummings2009-tr]
-
--   発症率や治療効果が高くないと、OR≒RRと出来る
--   どちらかがずれると、ORはRRに近似出来ない！
-
-## Risk ratio / Risk differenceを出せない理由は？
-
-```{r}
-glm(formula = death_01 ~ swang1,
-                family  = binomial(link = "logit"),
-                data    = rhc_prep)
-
-glmCrude <- glm(formula = death_01 ~ swang1,
-                family  = binomial(link = "logit"),
-                data    = rhc_prep)
-
-glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + ninsclas + cat1 + das2d3pc + dnr1 + ca + surv2md1 + aps1 + scoma1 + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + resp + card + neuro + gastr + renal + meta + hema + seps + trauma + ortho + cardiohx + chfhx + dementhx + psychhx + chrpulhx + renalhx + liverhx + gibledhx + malighx + immunhx + transhx + amihx,
-               family  = binomial(link = "logit"),
-               data    = rhc_prep)
-
-```
-
-## 結果は一つの値に纏められる
-
-## 異質性は？
-
-## 例えば、Propensity score analysis
-
-```{r}
-
-```
 
 -   estimand -\> 誰に？
 -   どれくらい？
@@ -385,7 +414,7 @@ glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + 
 
 ## Thank you for your listening!!
 
-### References
+## References
 
 ::: {#refs}
 :::
