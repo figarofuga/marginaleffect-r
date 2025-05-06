@@ -326,15 +326,19 @@ glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + 
 
 ## G-computationの考え方
 
--   まずはOutcomeを予測するモデルを作る - これは、どんな形で、どんな非線形項があっても良い
--   元データで、Intervention以外をコピーして、Interventionをすべて0にしたサブデータを作成(data0)
--   同様にして、Interventionをすべて1にしたサブデータを作成(data1)
--   data1とdata0のアウトカムの差を平均すると、治療効果の平均(ATE)が推定出来る
+![](image/gformula.drawio.png)
 
-## G computationの応用
+## G-computationの応用
 
 -   元データのうち、元々Interventionが1の群だけで同様の事をするとATT
 -   元データのうち、元々Interventionが0の群だけで同様の事をするとATU　も推定可能
+-   Interventionだけでなくても、興味がある変数を動かす事で周辺効果(marginal effect)を出すことが可能
+
+## G-computationの利点
+
+-   「この集団の介入を変えたら、どの程度良くなるか？」をダイレクトに伝えられる[@King2000-ce]
+    -   InteractionやSplineなど複雑な式でもシンプルに結果を伝えられる
+-   因果と予測を両方行う事が可能！
 
 ## Average marginal prediction
 
