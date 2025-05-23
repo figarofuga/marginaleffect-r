@@ -140,10 +140,9 @@ cowplot::plot_grid(plotlist = list(p1, p2, p3, p4), nrow = 2)
 :::
 :::::
 
-## その上
+## 多変量回帰の複雑性～交互作用
 
--   中の式も複雑になっている - 交互作用\
-    - 非線形の関係はどうやって表す？ - restricted cubic splineなど
+-   中の式も複雑になっている - 交互作用
 
 ```{r}
 
@@ -182,13 +181,18 @@ parameters::model_parameters(interact_fit, exponentiate = T) |>
 
 
 ```
+
 ## Interactionの意味は？
 
--   Subgroup解析の意味って？
+-   Interaction項のORの解釈は？
     -   結果の一貫性を示す？
     -   結果の異質性を示す？
 
-## 例えば、2つの連続値をSplineで表した場合～1
+## 多変量回帰の複雑性～非線形
+
+-   非線形の関係の連続値の扱い方は？
+    -   LOESS? log? Rrestricted Cubic Spline?
+-   RCSの解釈は？
 
 ```{r}
 
@@ -251,22 +255,7 @@ plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`, opacity = 0.5) |>
 ![](image/zetsubou.png)
 
 
-## Logistic regressionの結果の解釈
-
--   Odds ratioとは？
--   我々が使う数は？
-    -   実はRisk difference
-
-## Odds ratioとRisk ratioの関係
-
-![](image/or_rr.png)
-
-[@Cummings2009-tr]
-
--   発症率や治療効果が高くないと、OR≒RRと出来る
--   どちらかがずれると、ORはRRに近似出来ない！
-
-## Risk ratio/Risk differenceは1つの数値で良いのか？
+## 治療効果は1つの結果で良いのか？
 
 ::::: columns
 ::: {.column width="50%"}
@@ -276,6 +265,7 @@ plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`, opacity = 0.5) |>
               
 -   集団全体の治療効果判定のみ
 -   患者のRiskによって治療効果は異なるはず
+    -   治療効果の異質性
 
 :::
 
@@ -288,8 +278,6 @@ plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`, opacity = 0.5) |>
 :::
 
 ::::
-
-## Risk ratio / Risk differenceを出せない理由は？
 
 ```{r}
 glm(formula = death_01 ~ swang1,
@@ -328,11 +316,20 @@ glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + 
 
 ![](image/gformula.drawio.png)
 
-## G-computationの応用
+## G-computationの応用～ATE/ATT/ATU
 
--   元データのうち、元々Interventionが1の群だけで同様の事をするとATT
--   元データのうち、元々Interventionが0の群だけで同様の事をするとATU　も推定可能
+![](image/gformula_att.drawio.png)
+
+-   元データのうち、元々Interventionが0/1の群だけで同様の事をするとATT/ATUも推定可能
 -   Interventionだけでなくても、興味がある変数を動かす事で周辺効果(marginal effect)を出すことが可能
+-   重み付けを使うことで、Doubly robustも可能
+
+## G-computationの応用～Doubly robust
+
+1.   Propensity score weightingを計算
+1.   Outcomeを目標とする多変量回帰を作成
+1.   上記を組み合わせてDoubly robustを計算可能
+1.   どの群を選ぶかでATT/ATE/ATUも簡単に計算可能！
 
 ## G-computationの利点
 
