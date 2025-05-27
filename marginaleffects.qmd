@@ -143,42 +143,14 @@ cowplot::plot_grid(plotlist = list(p1, p2, p3, p4), nrow = 2)
 
 ## 例えば・・・・・・
 
-- ここに、StressEchoのデータセットの説明
-```{r}
-stressEcho <- data.table::fread("stressEcho.csv")
+-   ICU入室患者に対してRHCが予後を改善するかをみた観察研究[@Connors1996-gz]
+    -   Propensity scoreを広めた研究としても有名
+-   例えば、RHCが半年以内の死亡と関連するかをロジスティック回帰で解析をする
 
-dd <- rms::datadist(stressEcho)
-options("datadist" = dd)
-
-options(prType='html')   # have certain Hmisc functions render in html
-hookaddcap()   # make knitr call a function at the end of each chunk
-               # to try to automdatically add to list of figure
-
-Hmisc::describe(stressEcho)
-
-
-
-```
-
-- ここで、Max HRを予測するolsを作る
-- しかし、ここで上級医のつっこみ
-
-## これって、交互作用があるんじゃない？
-
-## これってAgeは線形でいいの？
-
-## その結果・・・・・・
-
-## 多変量回帰の複雑性～交互作用
-
--   中の式も複雑になっている - 交互作用
 
 ```{r}
 
 rhc <- data.table::fread("rhc.csv")
-veteran <- survival::veteran
-colon <- survival::colon
-
 
 rhc_prep <- setDT(rhc) |> 
   datawizard::data_modify(
@@ -198,18 +170,34 @@ rhc_prep <- setDT(rhc) |>
 dd <- rms::datadist(rhc_prep)
 options("datadist" = dd)
 
-colon_recurrent <- datawizard::data_filter(colon, etype == 1)
+full_fit <- lrm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + ninsclas + cat1 + das2d3pc + dnr1 + ca + surv2md1 + aps1 + scoma1 + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + resp + card + neuro + gastr + renal + meta + hema + seps + trauma + ortho + cardiohx + chfhx + dementhx + psychhx + chrpulhx + renalhx + liverhx + gibledhx + malighx + immunhx + transhx + amihx,
+               data    = rhc_prep)
 
-colon_death <- datawizard::data_filter(colon, etype == 2)
+
+parameters::model_parameters(full_fit, exponentiate = T) |> 
+  dplyr::filter(stringr::str_detect(Parameter, pattern = "swang1"))
+
+```
+
+-   結果として、RHCは半年以内の死亡と関連する！
+-   しかし、ここで上級医のつっこみ
+
+
+## これって、原病で交互作用があるんじゃない？心不全だと予後がいいんじゃない？
+
+```{r}
 
 interact_fit <- lrm(death_01 ~ age * sex + crea1 + meanbp1 + hrt1 + resp1 + alb1, data = rhc_prep)
 
 parameters::model_parameters(interact_fit, exponentiate = T) |> 
   plot()
-
-
-
 ```
+
+## これってAgeは線形でいいの？
+
+## その結果・・・・・・
+
+## 多変量回帰の複雑性～交互作用
 
 ## Interactionの意味は？
 
@@ -390,6 +378,11 @@ SUTVAの原理
 
 ```{r}
 
+veteran <- survival::veteran
+colon <- survival::colon
+colon_recurrent <- datawizard::data_filter(colon, etype == 1)
+
+colon_death <- datawizard::data_filter(colon, etype == 2)
 
 
 ```
