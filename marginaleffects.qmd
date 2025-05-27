@@ -33,6 +33,7 @@ library(plotly)
 library(tinytable)
 library(Hmisc)
 library(rms)
+library(qreport)
 library(survival)
 library(plotthis)
 library(cowplot)
@@ -142,15 +143,14 @@ cowplot::plot_grid(plotlist = list(p1, p2, p3, p4), nrow = 2)
 
 ## 例えば・・・・・・
 
+- ここに、StressEchoのデータセットの説明
 ```{r}
 stressEcho <- data.table::fread("stressEcho.csv")
 
 dd <- rms::datadist(stressEcho)
 options("datadist" = dd)
 
-require(Hmisc)
 options(prType='html')   # have certain Hmisc functions render in html
-require(qreport)
 hookaddcap()   # make knitr call a function at the end of each chunk
                # to try to automdatically add to list of figure
 
@@ -159,6 +159,15 @@ Hmisc::describe(stressEcho)
 
 
 ```
+
+- ここで、Max HRを予測するolsを作る
+- しかし、ここで上級医のつっこみ
+
+## これって、交互作用があるんじゃない？
+
+## これってAgeは線形でいいの？
+
+## その結果・・・・・・
 
 ## 多変量回帰の複雑性～交互作用
 
