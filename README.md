@@ -1,6 +1,3 @@
 # marginaleffect-r
 
-- 最初に以下のExtensionを入れます
-`quarto install extension kazuyanagimoto/quarto-clean-typst`
-
-- 
+Marginal effectを使った多変量回帰の応用についてのスライドです。Quartoでreveal.jsで行っています。
