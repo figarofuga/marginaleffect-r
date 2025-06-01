@@ -200,10 +200,14 @@ modelsummary::modelsummary(
 ```
 
 -   結果として、RHCは半年以内の死亡と関連する！
--   しかし、ここで上級医のつっこみ
+-   しかし、ここで上司からのつっこみ
+
+## 上司からのつっこみ①
+
+![](image/boss_interact.drawio.png)
 
 
-## これって、原病で交互作用があるんじゃない？心不全だと予後がいいんじゃない？
+## 結果①
 
 ```{r}
 
@@ -219,7 +223,12 @@ modelsummary::modelsummary(
 
 ```
 
-## これってAgeは非線形なんじゃないの？
+
+## 上司からのつっこみ②
+
+![](image/boss_spline.drawio.png)
+
+## 結果②
 
 ```{r}
 
@@ -235,10 +244,10 @@ modelsummary::modelsummary(
 
 ```
 
+## 最終的に・・・・・・
 
-## その結果・・・・・・
+![](image/gakkai_shitsugi.drawio.png)
 
-## 多変量回帰の複雑性～交互作用
 
 ## Interactionの意味は？
 
@@ -252,16 +261,7 @@ modelsummary::modelsummary(
     -   LOESS? log? Rrestricted Cubic Spline?
 -   RCSの解釈は？
 
-```{r}
-
-options(prType='html')   # for print, summary, anova
-
-spline_fit2 <- lrm(death_01 ~ rcs(age, 4) * rcs(crea1, 4) + sex + meanbp1 + hrt1 + resp1 + alb1, data = rhc_prep)
-
-print(spline_fit2)
-```
-
-## 例えば、2つの連続値をSplineで表したの場合～2
+## 例えば、2つの連続値をSplineで表したの場合
 
 :::: {.columns}
 
@@ -312,6 +312,28 @@ plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`, opacity = 0.5) |>
 
 ![](image/zetsubou.png)
 
+
+## どうしてこんな事に？
+
+- 基本的に多変量回帰は線形回帰を前提としている
+- 線形回帰の条件
+  - Linearity: 目的変数と説明変数の間が線形の関係であること．
+  - Independence: どの説明変数の残差間にも相関がない．
+  - Normality: 残差が正規分布していること
+  - Error variance: 残差の等分散性
+- これらが満たされない時にInteractionやSplineが必要
+
+## どうしてこんな事に？
+
+- 線形回帰の係数の解釈 = 条件付き期待値
+  - 他の値を固定した時に、その因子を1単位変化した時の平均的なアウトカムの変化量
+- その結果、係数(OR, HRなど)という1つの値にまるめてしまう
+- 複雑な関係性をこの係数のみを報告する事で逆にわかりにくくなる事もある
+ 
+## どうやって報告すればいい？
+
+- 「誰に？」「何が？」「どのくらい？」変化したら、アウトカムが変化するか？
+- 難しい言葉でいうと**"Estimand"**
 
 ## 治療効果は1つの結果で良いのか？
 
