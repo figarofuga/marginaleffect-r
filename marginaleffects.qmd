@@ -32,6 +32,7 @@ library(ggsurvfit)
 library(plotly)
 library(modelsummary)
 library(tinytable)
+library(marginaleffects)
 library(Hmisc)
 library(rms)
 library(qreport)
@@ -179,7 +180,7 @@ interact_fit <- glm(formula =  death_01 ~ swang1*cat_chf + age + sex + race + ed
                family = binomial,
                data    = rhc_prep)
 
-spline_fit <- glm(formula =  death_01 ~ swang1*cat_chf*rcs(age, 4) + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+spline_fit <- glm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) * rcs(crea1, 4) + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                family = binomial,
                data    = rhc_prep)
 
@@ -256,16 +257,8 @@ modelsummary::modelsummary(
 ::: {.column width="40%"}
 ```{r}
 
-spline_fit2 <- lrm(death_01 ~ rcs(age, 4) * rcs(crea1, 4) + sex + meanbp1 + hrt1 + resp1 + alb1, data = rhc_prep)
-
-spline_dat2 <- Predict(spline_fit2, age = seq(0, 100, by = 2), crea1 = seq(0, 10, 0.2)) |> 
-  dplyr::rename(`Odds ratio` = yhat, 
-                Cr = crea1, 
-                Age = age)
-
-spline_fig1 <- Predict(spline_fit2, age, fun = exp) |> 
-  ggplot() + 
-  labs(title = "Spline curve for one variables")
+spline_fig1 <- marginaleffects::plot_predictions(spline_fit, condition = "age", type = "response") + 
+  labs(y = "Probability for Death")
 
 spline_fig1
 
@@ -277,7 +270,11 @@ spline_fig1
 
 ```{r}
 
-plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`, opacity = 0.5) |>
+spline_dat2 <- marginaleffects::predictions(
+  model = spline_fit, 
+  newdata = datagrid(age = seq(0, 100, by = 2), crea1 = seq(0, 10, 0.2)))
+
+plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~estimate, opacity = 0.5) |>
       add_trace(type="mesh3d") |>
       layout(
     title = list(
@@ -291,8 +288,7 @@ plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`, opacity = 0.5) |>
 
 :::
 
--   本当のSplineでこんな感じ
--   どういう意味ですか？
+-   解釈・・・・・・
 
 ::::
 
@@ -300,6 +296,13 @@ plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`, opacity = 0.5) |>
 
 ![](image/where_we_are.jpeg)
 
+
+## こんな時にJAMA！
+
+![](image/JAMA_causal.png)
+
+- "誰に"、"どの統計量で"計測するのか？
+- Causal estimandを決める [@Dahabreh2024-ea]
 
 ## Interactionの意味は？
 
