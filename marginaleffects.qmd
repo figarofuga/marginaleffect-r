@@ -249,23 +249,6 @@ modelsummary::modelsummary(
 ![](image/gakkai_shitsugi.drawio.png)
 
 
-## 我々はどこにいる？
-
-![](image/where_we_are.jpeg)
-
-
-## Interactionの意味は？
-
--   Interaction項のORの解釈は？
-    -   結果の一貫性を示す？
-    -   結果の異質性を示す？
-
-## 多変量回帰の複雑性～非線形
-
--   非線形の関係の連続値の扱い方は？
-    -   LOESS? log? Rrestricted Cubic Spline?
--   RCSの解釈は？
-
 ## 例えば、2つの連続値をSplineで表したの場合
 
 :::: {.columns}
@@ -312,6 +295,25 @@ plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`, opacity = 0.5) |>
 -   どういう意味ですか？
 
 ::::
+
+## 我々はどこにいる？
+
+![](image/where_we_are.jpeg)
+
+
+## Interactionの意味は？
+
+-   Interaction項のORの解釈は？
+    -   結果の一貫性を示す？
+    -   結果の異質性を示す？
+
+## 多変量回帰の複雑性～非線形
+
+-   非線形の関係の連続値の扱い方は？
+    -   LOESS? log? Rrestricted Cubic Spline?
+-   RCSの解釈は？
+
+
 
 
 
