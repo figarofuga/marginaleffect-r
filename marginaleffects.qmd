@@ -179,7 +179,7 @@ interact_fit <- glm(formula =  death_01 ~ swang1*cat_chf + age + sex + race + ed
                family = binomial,
                data    = rhc_prep)
 
-spline_fit <- glm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+spline_fit <- glm(formula =  death_01 ~ swang1*cat_chf*rcs(age, 4) + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                family = binomial,
                data    = rhc_prep)
 
@@ -249,6 +249,11 @@ modelsummary::modelsummary(
 ![](image/gakkai_shitsugi.drawio.png)
 
 
+## 我々はどこにいる？
+
+![](image/where_we_are.jpeg)
+
+
 ## Interactionの意味は？
 
 -   Interaction項のORの解釈は？
@@ -308,9 +313,6 @@ plot_ly(spline_dat2, x = ~Age, y = ~Cr, z = ~`Odds ratio`, opacity = 0.5) |>
 
 ::::
 
-## 我々はどこにいる？
-
-![](image/zetsubou.png)
 
 
 ## どうしてこんな事に？
