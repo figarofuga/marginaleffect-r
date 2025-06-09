@@ -21,6 +21,7 @@ execute:
   error: false
   warning: false
   echo: false
+  cache: true
 bibliography: references.bib
 ---
 
@@ -53,19 +54,8 @@ library(cowplot)
 
 -   本当？
 
-## 多変量回帰は簡単？ {.smaller}
+## 多変量回帰は簡単？ 
 
-::::: columns
-::: {.column width="50%"}
--   多変量回帰は多くの種類がある
-    -   0/1でLogistic回帰
-    -   整数値だとPoisson回帰
-    -   順序ロジット
-    -   Censored regression(Cox回帰もこのうち)
--   選択肢が多く、その分どうすればよいのか分からない！
-:::
-
-::: {.column width="50%"}
 ```{r}
 #| warning: false
 #| fig-cap: "Many regression species"
@@ -140,8 +130,14 @@ p4 <- ggsurvfit::survfit2(Surv(time, status) ~ adhere, data = survival::colon) |
 cowplot::plot_grid(plotlist = list(p1, p2, p3, p4), nrow = 2)
 
 ```
-:::
-:::::
+
+
+-   多変量回帰は多くの種類がある
+    -   0/1でLogistic回帰
+    -   整数値だとPoisson回帰
+    -   順序ロジット
+    -   Censored regression(Cox回帰もこのうち)
+-   選択肢が多く、その分どうすればよいのか分からない！
 
 ## 例えば・・・・・・
 
@@ -304,23 +300,15 @@ plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~estimate, opacity = 0.5) |>
 - "誰に"、"どの統計量で"計測するのか？
 - Causal estimandを決める [@Dahabreh2024-ea]
 
-## Interactionの意味は？
 
--   Interaction項のORの解釈は？
-    -   結果の一貫性を示す？
-    -   結果の異質性を示す？
+## 我々(臨床医)のしたい事
 
-## 多変量回帰の複雑性～非線形
-
--   非線形の関係の連続値の扱い方は？
-    -   LOESS? log? Rrestricted Cubic Spline?
--   RCSの解釈は？
+- 根本的な問いかけ
+    - 「誰への治療効果ですか？」
+    - 「どうやった時の治療効果ですか？」
 
 
-
-
-
-## どうしてこんな事に？
+<!-- ## どうしてこんな事に？
 
 - 基本的に多変量回帰は線形回帰を前提としている
 - 線形回帰の条件
@@ -328,58 +316,23 @@ plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~estimate, opacity = 0.5) |>
   - Independence: どの説明変数の残差間にも相関がない．
   - Normality: 残差が正規分布していること
   - Error variance: 残差の等分散性
-- これらが満たされない時にInteractionやSplineが必要
+- これらが満たされない時にInteractionやSplineが必要 -->
 
-## どうしてこんな事に？
+## 線形回帰の係数だと駄目な理由は？
 
 - 線形回帰の係数の解釈 = 条件付き期待値
   - 他の値を固定した時に、その因子を1単位変化した時の平均的なアウトカムの変化量
 - その結果、係数(OR, HRなど)という1つの値にまるめてしまう
 - 複雑な関係性をこの係数のみを報告する事で逆にわかりにくくなる事もある
  
-## どうやって報告すればいい？
+## じゃあ、どうやって報告する？
 
 - 「誰に？」「何が？」「どのくらい？」変化したら、アウトカムが変化するか？
-- 難しい言葉でいうと**"Estimand"**
-
-## 治療効果は1つの結果で良いのか？
-
-::::: columns
-::: {.column width="50%"}
-✕
-
-![](image/harrel_bin_text.png)
-              
--   集団全体の治療効果判定のみ
--   患者のRiskによって治療効果は異なるはず
-    -   治療効果の異質性
-
-:::
-
-::: {.column width="50%"}
-◯
-
-![](image/harrel_binomial.png)
-
-
-:::
-
-::::
-
-```{r}
-glm(formula = death_01 ~ swang1,
-                family  = binomial(link = "logit"),
-                data    = rhc_prep)
-
-glmCrude <- glm(formula = death_01 ~ swang1,
-                family  = binomial(link = "logit"),
-                data    = rhc_prep)
-
-glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + ninsclas + cat1 + das2d3pc + dnr1 + ca + surv2md1 + aps1 + scoma1 + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + resp + card + neuro + gastr + renal + meta + hema + seps + trauma + ortho + cardiohx + chfhx + dementhx + psychhx + chrpulhx + renalhx + liverhx + gibledhx + malighx + immunhx + transhx + amihx,
-               family  = binomial(link = "logit"),
-               data    = rhc_prep)
-
-```
+- 難しい言葉でいうと**"Estimand"**を報告する必要がある
+- 例えば
+  1. 群全体: **ATE**
+  2. 治療を受けた群全体: **ATT**
+  3. 治療を受けなかった群全体: **ATU**
 
 
 ## ここまでの纏め
@@ -387,12 +340,11 @@ glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + 
 -   多変量解析は解釈がわかりにくい！
     -   特に、InteractionやSplineが入るとよりわかりにくい
     -   通常の解析だと、結果は集団全体の平均で丸め込まれてしまう
-        -   Realな治療効果はBaselineのRiskでも変わるはず！
-    -   どうすればいい？
+        -   **Estimandをどうやって出せばいい？**
 
 ## Marginal effectsという選択肢
 
--   G-computationについて
+-   G-computationを用いて**限界効果**を出す
 
 ## G-computation
 
@@ -402,6 +354,33 @@ glmFull <- glm(formula =  death_01 ~ swang1 + age + sex + race + edu + income + 
 ## G-computationの考え方
 
 ![](image/gformula.drawio.png)
+
+## 実際
+:::: {.columns}
+
+::: {.column width="50%"}
+```{r}
+marginaleffects::predictions(spline_fit) |> 
+  as.data.frame() |> 
+  dplyr::select(rowid, estimate, p.value, conf.low, conf.high, death_01, age, sex, swang1) |> 
+  tibble::as_tibble()
+
+
+```
+
+:::
+
+::: {.column width="50%"}
+```{r}
+marginaleffects::predictions(spline_fit, variables = "swang1") |> 
+  as.data.frame() |> 
+  dplyr::select(rowid, estimate, p.value, conf.low, conf.high, death_01, age, sex, swang1) |> 
+  tibble::as_tibble()
+
+
+```
+
+:::
 
 ## G-computationの応用～ATE/ATT/ATU
 
