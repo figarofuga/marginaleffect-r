@@ -40,6 +40,7 @@ library(qreport)
 library(survival)
 library(plotthis)
 library(cowplot)
+library(DT)
 ```
 
 ## 皆さん多変量回帰は好きですか？
@@ -176,8 +177,7 @@ interact_fit <- glm(formula =  death_01 ~ swang1*cat_chf + age + sex + race + ed
                family = binomial,
                data    = rhc_prep)
 
-spline_fit <- glm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) * rcs(crea1, 4) + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
-               family = binomial,
+monospline_fit <- lrm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = rhc_prep)
 
 ```
@@ -230,7 +230,7 @@ modelsummary::modelsummary(
 ```{r}
 
 modelsummary::modelsummary(
-  list("Base" = full_fit, "Interact" = interact_fit, "Spline" = spline_fit),
+  list("Base" = full_fit, "Interact" = interact_fit, "Spline" = monospline_fit),
   exponentiate = TRUE,
   coef_rename = c("swang1RHC" = "RHC", "cat_chfOthers" = "Not CHF", "age" = "Age"),
   fmt = 2,
@@ -253,8 +253,11 @@ modelsummary::modelsummary(
 ::: {.column width="40%"}
 ```{r}
 
-spline_fig1 <- marginaleffects::plot_predictions(spline_fit, condition = "age", type = "response") + 
-  labs(y = "Probability for Death")
+spline_fig1 <- rms::Predict(monospline_fit, age, fun = exp) |> 
+  ggplot() + 
+    labs(y = "Probability for Death")
+
+
 
 spline_fig1
 
@@ -266,11 +269,13 @@ spline_fig1
 
 ```{r}
 
-spline_dat2 <- marginaleffects::predictions(
-  model = spline_fit, 
-  newdata = datagrid(age = seq(0, 100, by = 2), crea1 = seq(0, 10, 0.2)))
+bispline_fit <- rms::lrm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) * rcs(crea1, 4) + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+               data    = rhc_prep)
 
-plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~estimate, opacity = 0.5) |>
+spline_dat2 <- rms::Predict(bispline_fit, age, crea1, fun = exp)
+
+
+plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~yhat, opacity = 0.5) |>
       add_trace(type="mesh3d") |>
       layout(
     title = list(
@@ -355,32 +360,74 @@ plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~estimate, opacity = 0.5) |>
 
 ![](image/gformula.drawio.png)
 
-## 実際
-:::: {.columns}
+## 前提
 
-::: {.column width="50%"}
 ```{r}
-marginaleffects::predictions(spline_fit) |> 
-  as.data.frame() |> 
-  dplyr::select(rowid, estimate, p.value, conf.low, conf.high, death_01, age, sex, swang1) |> 
-  tibble::as_tibble()
 
+marginaleffects::predictions(monospline_fit) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(rowid, swang1, estimate, conf.low, conf.high, death_01)
+  
 
 ```
 
-:::
 
-::: {.column width="50%"}
+
+## 実践①
+
 ```{r}
-marginaleffects::predictions(spline_fit, variables = "swang1") |> 
-  as.data.frame() |> 
-  dplyr::select(rowid, estimate, p.value, conf.low, conf.high, death_01, age, sex, swang1) |> 
-  tibble::as_tibble()
 
+swang_margin <- marginaleffects::predictions(monospline_fit, variables = "swang1")
+
+
+swang_margin |> 
+  tibble::as_tibble() |> 
+  dplyr::select(rowid, swang1, estimate, conf.low, conf.high, death_01)
 
 ```
 
-:::
+
+- 行数が2倍(5733→11466)になっている事に注意！
+- swang1列のみ変更したデータセットを作成
+
+## 実践②
+
+```{r}
+
+swang_margin |> 
+  dplyr::summarise(mean_estimate = mean(estimate), .by = swang1)
+
+marginaleffects::avg_predictions(monospline_fit, variables = "swang1")
+
+```
+
+- swang1毎でのestimateを纏める
+- 差をとったらRisk differenceを出せる
+- lnratioでOdds ratioを出せる
+
+## 実践②
+
+```{r}
+
+marginaleffects::avg_comparisons(
+  monospline_fit, 
+  variables = "swang1", 
+  comparison = "difference"
+  )
+
+marginaleffects::avg_comparisons(
+  monospline_fit, 
+  variables = "swang1", 
+  comparison = "lnratioavg", 
+  transform = "exp"
+  )
+
+```
+
+- swang1毎でのestimateを纏める
+- 差をとったらRisk differenceを出せる
+- lnratioでOdds ratioを出せる
+  
 
 ## G-computationの応用～ATE/ATT/ATU
 
@@ -388,6 +435,7 @@ marginaleffects::predictions(spline_fit, variables = "swang1") |>
 
 -   元データのうち、元々Interventionが0/1の群だけで同様の事をするとATT/ATUも推定可能
 -   Interventionだけでなくても、興味がある変数を動かす事で周辺効果(marginal effect)を出すことが可能
+    -   少しわかりにくいけど、**平均値**みたいなイメージ
 -   重み付けを使うことで、Doubly robustも可能
 
 ## G-computationの応用～Doubly robust
