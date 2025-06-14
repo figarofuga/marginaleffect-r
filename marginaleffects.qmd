@@ -360,20 +360,25 @@ plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~yhat, opacity = 0.5) |>
 
 ![](image/gformula.drawio.png)
 
-## 前提
+## 実践①
+
+:::: {.columns}
+
+::: {.column width="50%"}
 
 ```{r}
 
 marginaleffects::predictions(monospline_fit) |> 
   tibble::as_tibble() |> 
-  dplyr::select(rowid, swang1, estimate, conf.low, conf.high, death_01)
+  dplyr::select(rowid, swang1, estimate, conf.low, conf.high, death_01) |> 
+  print()
   
 
 ```
 
+:::
 
-
-## 実践①
+::: {.column width="50%"}
 
 ```{r}
 
@@ -382,10 +387,13 @@ swang_margin <- marginaleffects::predictions(monospline_fit, variables = "swang1
 
 swang_margin |> 
   tibble::as_tibble() |> 
-  dplyr::select(rowid, swang1, estimate, conf.low, conf.high, death_01)
+  dplyr::select(rowid, swang1, estimate, conf.low, conf.high, death_01) |> 
+  print()
 
 ```
 
+:::
+::::
 
 - 行数が2倍(5733→11466)になっている事に注意！
 - swang1列のみ変更したデータセットを作成
@@ -394,26 +402,23 @@ swang_margin |>
 
 ```{r}
 
-swang_margin |> 
-  dplyr::summarise(mean_estimate = mean(estimate), .by = swang1)
-
 marginaleffects::avg_predictions(monospline_fit, variables = "swang1")
 
 ```
 
 - swang1毎でのestimateを纏める
 - 差をとったらRisk differenceを出せる
-- lnratioでOdds ratioを出せる
+- この結果を変形する事で色々な数値を出せる。
 
 ## 実践②
 
-```{r}
+:::: {.columns}
 
-marginaleffects::avg_comparisons(
-  monospline_fit, 
-  variables = "swang1", 
-  comparison = "difference"
-  )
+::: {.column width="50%"}
+
+**Risk ratio**
+
+```{r}
 
 marginaleffects::avg_comparisons(
   monospline_fit, 
@@ -424,10 +429,26 @@ marginaleffects::avg_comparisons(
 
 ```
 
-- swang1毎でのestimateを纏める
-- 差をとったらRisk differenceを出せる
-- lnratioでOdds ratioを出せる
-  
+:::
+
+::: {.column width="50%"}
+
+**Odds ratio**
+
+```{r}
+
+marginaleffects::avg_comparisons(
+  monospline_fit, 
+  variables = "swang1", 
+  comparison = "lnoravg", 
+  transform = "exp"
+  )
+
+```
+
+:::
+
+::::
 
 ## G-computationの応用～ATE/ATT/ATU
 
@@ -435,8 +456,37 @@ marginaleffects::avg_comparisons(
 
 -   元データのうち、元々Interventionが0/1の群だけで同様の事をするとATT/ATUも推定可能
 -   Interventionだけでなくても、興味がある変数を動かす事で周辺効果(marginal effect)を出すことが可能
-    -   少しわかりにくいけど、**平均値**みたいなイメージ
--   重み付けを使うことで、Doubly robustも可能
+
+## 実践③
+
+- 例えば、患者背景がCHFかどうかでRHCの効果をRisk ratioで出したい時
+
+```{r}
+
+marginaleffects::avg_predictions(
+  monospline_fit, 
+  variables = "swang1", 
+  newdata = subset(cat_chf == "CHF")
+  ) |> 
+  print()
+
+marginaleffects::avg_predictions(
+  monospline_fit, 
+  variables = "swang1", 
+  newdata = subset(!cat_chf == "CHF")
+  ) |> 
+  print()
+
+
+marginaleffects::avg_comparisons(
+  monospline_fit, 
+  variables = "swang1", 
+  by = "cat_chf", 
+  comparison = "lnratioavg", 
+  transform = "exp"
+  ) 
+
+```
 
 ## G-computationの応用～Doubly robust
 
