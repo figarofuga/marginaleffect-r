@@ -521,65 +521,6 @@ SUTVAの原理
 
 > すべてのモデルは誤っている。しかし、そのうちのいくつかは役に立つ。
 
-## 例えば
-
-```{r}
-
-veteran <- survival::veteran
-colon <- survival::colon
-colon_recurrent <- datawizard::data_filter(colon, etype == 1)
-
-colon_death <- datawizard::data_filter(colon, etype == 2)
-
-
-```
-
--   大腸癌のデータセット[@survival-package, @laurie1989]
-
-```{r}
-
-# fit <- glm(death_30days ~ swang1 + age + sex + adld3p + meanbp1 + hrt1 + resp1 + crea1 , data = rhc_prep, family = binomial)
-
-fit <- glm(status ~ rx + age + sex + obstruct + perfor + adhere + surg + nodes, data = colon_death, family = binomial)
-
-parameters::model_parameters(fit, exponentiate = TRUE) |> 
-  format(select = "minimal") |> 
-  tinytable::tt() |> 
-  tinytable::style_tt(i = 2, bold = T, color = "red")
-
-```
-
-## 結果の解釈
-
-1.  Levamisoleの治療は経過観察と比べて有意差はなし
-2.  Levamisole + 5-FUは経過観察に比べて予後良好と関連する
-
-## Good news！
-
-![](image/impact_factor.png) [@hegyi2020]
-
--   NEJM, JAMA, Lancet, ...を目指そう！
--   でも・・・
-    -   例えば、副作用が30%増えるとして患者さんにどう説明する？
-    -   他にも・・・
-
-## 医学は無料ではない！
-
-![](image/tafamidis.png) [@Maurer2018-rp]
-
--   9716.5円/Cap x 4 x 365 = 1400万円/年
--   医療経済的にどう考えればいい？
-
-
--   estimand -\> 誰に？
--   どれくらい？
-
-## Marginal effects
-
--   各群での、平均化(周辺化)した値をMarginal effectsという
-    -   反対はConditional effectsという
--   必要な群でのMarginal effectsこそが重要！！
-
 ## RでのMarginal effectsの使い方
 
 ## Thank you for your listening!!
