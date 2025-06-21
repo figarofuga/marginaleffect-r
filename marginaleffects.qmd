@@ -3,6 +3,8 @@ title: Marginal effectsとその周辺
 subtitle: 多変量回帰・・・好きですか？
 format:
   revealjs:
+    toc: true
+    toc-depth: 1
     width: 1600
     height: 900
     theme: [default, custom-style.scss]
@@ -42,6 +44,8 @@ library(plotthis)
 library(cowplot)
 library(DT)
 ```
+
+# 回帰分析について
 
 ## 皆さん多変量回帰は好きですか？
 
@@ -347,6 +351,8 @@ plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~yhat, opacity = 0.5) |>
     -   通常の解析だと、結果は集団全体の平均で丸め込まれてしまう
         -   **Estimandをどうやって出せばいい？**
 
+# Standardization and the prametric g-formulaの基礎
+
 ## Marginal effectsという選択肢
 
 -   G-computationを用いて**限界効果**を出す
@@ -450,6 +456,8 @@ marginaleffects::avg_comparisons(
 
 ::::
 
+# G-computtionの応用
+
 ## G-computationの応用～ATE/ATT/ATU
 
 ![](image/gformula_att.drawio.png)
@@ -509,6 +517,8 @@ marginaleffects::avg_comparisons(
 
 SUTVAの原理
 
+# G-computationでのAdvancedな統計結果の伝え方
+
 ## そのため・・・・・・
 
 例えば、Matching→G computation あるいは、元々のInclusionを入れて除外したあとにIPW→アウトカム式を入れる そうすることでDoubly robust estimationとなる
@@ -516,6 +526,11 @@ SUTVAの原理
 ## どういう式を作る？
 
 基本は、ドメイン知識を入れる ただし、どのような関係性かをみるのにはAICとか、尤度比検定をしても良いかも
+
+# G-computationの限界
+
+
+# 最後に
 
 ## Box先生の名言
 
