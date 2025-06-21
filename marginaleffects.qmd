@@ -519,6 +519,8 @@ SUTVAの原理
 
 ## Box先生の名言
 
+![](image/George_Box.png)
+
 > すべてのモデルは誤っている。しかし、そのうちのいくつかは役に立つ。
 
 ## RでのMarginal effectsの使い方
