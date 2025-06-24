@@ -7,7 +7,7 @@ format:
     toc-depth: 1
     width: 1600
     height: 900
-    theme: [default, custom-style.scss]
+    # theme: [default, custom-style.scss]
     fig-width: 8
     fig-height: 6
     scrollable: true
