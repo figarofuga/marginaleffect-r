@@ -40,9 +40,9 @@ library(Hmisc)
 library(rms)
 library(qreport)
 library(survival)
-library(plotthis)
 library(cowplot)
-library(DT)
+library(MatchIt)
+library(WeightIt)
 ```
 
 # 回帰分析について
@@ -155,7 +155,7 @@ cowplot::plot_grid(plotlist = list(p1, p2, p3, p4), nrow = 2)
 
 rhc <- data.table::fread("rhc.csv")
 
-rhc_prep <- setDT(rhc) |> 
+rhc_prep <- data.table::setDT(rhc) |> 
   datawizard::data_modify(
       death_01 = fifelse(death == "Yes", 1, 0),
       death_days_pre = fcase(
@@ -166,9 +166,14 @@ rhc_prep <- setDT(rhc) |>
     death == "Yes" & death_days_pre <= 180, 1, 0
   ), 
   death_days = fifelse(death_days_pre <= 180, death_days_pre, 180), 
-  alb1 = fifelse(alb1 > 7, NA_real_, alb1), 
-  cat_chf = fifelse(cat1 == "CHF", "CHF", "Others")
-)
+  alb1 = fifelse(alb1 > 8, NA_real_, alb1), 
+  alb1 = fifelse(is.na(alb1), median(alb1), alb1),
+  cat_chf = fifelse(cat1 == "CHF", "CHF", "Others"), 
+  swang_yn = fifelse(swang1 == "RHC", 1, 0)
+) |> 
+  tidyr::drop_na(
+    death_01, swang1, cat_chf, age, sex, race, edu, income, wtkilo1, temp1, meanbp1, resp1, hrt1, pafi1, paco21, ph1, wblc1, hema1, sod1, pot1, crea1, bili1, alb1, cardiohx, chfhx, immunhx, transhx, amihx
+  )
 
 dd <- rms::datadist(rhc_prep)
 options("datadist" = dd)
@@ -181,7 +186,8 @@ interact_fit <- glm(formula =  death_01 ~ swang1*cat_chf + age + sex + race + ed
                family = binomial,
                data    = rhc_prep)
 
-monospline_fit <- lrm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+monospline_fit <- glm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+               family = binomial,
                data    = rhc_prep)
 
 ```
@@ -273,7 +279,7 @@ spline_fig1
 
 ```{r}
 
-bispline_fit <- rms::lrm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) * rcs(crea1, 4) + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+bispline_fit <- rms::lrm(formula =  death_01 ~ swang1 + cat_chf + rcs(age, 3) * rcs(crea1, 3) + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = rhc_prep)
 
 spline_dat2 <- rms::Predict(bispline_fit, age, crea1, fun = exp)
@@ -288,6 +294,8 @@ plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~yhat, opacity = 0.5) |>
       x = 0.5  # タイトルを中央に（0が左、1が右）
     )
   )
+
+# rms::bplot(spline_dat2, lfun = wireframe)
 
 ```
 
@@ -456,6 +464,9 @@ marginaleffects::avg_comparisons(
 
 ::::
 
+- 疫学的にはリスク差(あるいはリスク比)が最も知りたい数値
+- Odds ratioは発生率が低いイベントでないと、Risk ratioと近似出来ない[@Cummings2009-tr]
+
 # G-computtionの応用
 
 ## G-computationの応用～ATE/ATT/ATU
@@ -467,34 +478,103 @@ marginaleffects::avg_comparisons(
 
 ## 実践③
 
-- 例えば、患者背景がCHFかどうかでRHCの効果をRisk ratioで出したい時
+- 例えば、患者背景がCHFでRHCの効果がどうなるかをみたい時
+
+:::: {.columns}
+
+::: {.column width="50%"}
 
 ```{r}
+
+marginaleffects::predictions(
+  monospline_fit, 
+  variables = "swang1", 
+  newdata = subset(cat_chf == "Others")
+  ) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(rowid, swang1, cat_chf, estimate, conf.low, conf.high, death_01) |> 
+  print()
+
+cat("ここから、swang 1の値毎にestimateを平均する")
 
 marginaleffects::avg_predictions(
   monospline_fit, 
   variables = "swang1", 
   newdata = subset(cat_chf == "CHF")
-  ) |> 
-  print()
+  )
 
-marginaleffects::avg_predictions(
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r}
+
+marginaleffects::comparisons(
   monospline_fit, 
   variables = "swang1", 
-  newdata = subset(!cat_chf == "CHF")
+  newdata = subset(cat_chf == "CHF")
   ) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(swang1, cat_chf, contrast,estimate, conf.low, conf.high, death_01) |> 
   print()
 
+cat("ここから、患者背景がCHFである患者の平均のRisk ratioを計算する")
 
 marginaleffects::avg_comparisons(
   monospline_fit, 
   variables = "swang1", 
-  by = "cat_chf", 
+  newdata = subset(cat_chf == "CHF"),
   comparison = "lnratioavg", 
   transform = "exp"
   ) 
 
 ```
+
+:::
+
+::::
+
+## G-computationの応用～Propensity score match
+
+1.   Propensity score matchを計算
+1.   Matched cohortを作成(仮想Randomized？)
+1.   残った
+1.   どの群を選ぶかでATT/ATE/ATUも簡単に計算可能！[@Greifer2025-me]
+
+## 実践④
+
+```{r}
+
+set.seed(42)
+
+mout <- MatchIt::matchit(formula = swang_yn ~ cat_chf + age + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx, data = rhc_prep, 
+method = "nearest", 
+distance = "glm"
+)
+
+print(mout)
+
+dat_m <- MatchIt::match_data(mout)
+
+matched_spline_fit <- glm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+               data    = dat_m, 
+               family = binomial,
+               weights = weights)
+
+matched_att <- avg_comparisons(matched_spline_fit,
+                variables = "swang1",
+                vcov = ~subclass,
+                newdata = subset(swang1 == "RHC"), 
+                comparison = "lnratioavg", 
+                transform = "exp"
+                )
+
+matched_att 
+
+```
+
 
 ## G-computationの応用～Doubly robust
 
