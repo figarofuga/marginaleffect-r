@@ -263,7 +263,11 @@ modelsummary::modelsummary(
 ::: {.column width="40%"}
 ```{r}
 
-spline_fig1 <- rms::Predict(monospline_fit, age, fun = exp) |> 
+monospline_fit_lrm <- rms::lrm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+               data    = rhc_prep)
+
+
+spline_fig1 <- rms::Predict(monospline_fit_lrm, age, fun = exp) |> 
   ggplot() + 
     labs(y = "Probability for Death")
 
@@ -558,6 +562,8 @@ print(mout)
 
 dat_m <- MatchIt::match_data(mout)
 
+tibble::as_tibble(dat_m)
+
 matched_spline_fit <- glm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = dat_m, 
                family = binomial,
@@ -573,6 +579,25 @@ matched_att <- avg_comparisons(matched_spline_fit,
 
 matched_att 
 
+matched_ate <- avg_comparisons(matched_spline_fit,
+                variables = "swang1",
+                vcov = ~subclass, 
+                comparison = "lnratioavg", 
+                transform = "exp"
+                )
+
+matched_ate
+
+matched_atc <- avg_comparisons(matched_spline_fit,
+                variables = "swang1",
+                vcov = ~subclass,
+                newdata = subset(swang1 == "No RHC"), 
+                comparison = "lnratioavg", 
+                transform = "exp"
+                )
+
+matched_atc
+
 ```
 
 
@@ -583,6 +608,26 @@ matched_att
 1.   上記を組み合わせてDoubly robustを計算可能
 1.   どの群を選ぶかでATT/ATE/ATUも簡単に計算可能！
 
+## 実践⑤
+
+```{r}
+
+set.seed(42)
+
+wout <- WeightIt::weightit(formula = swang_yn ~ cat_chf + age + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx, data = rhc_prep, 
+method = "glm", 
+estimand = "ATE"
+)
+
+print(wout)
+
+weighted_spline_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+               data    = rhc_prep, 
+               family = binomial,
+               weightit = wout)
+
+summary(weighted_spline_fit)
+```
 ## G-computationの利点
 
 -   「この集団の介入を変えたら、どの程度良くなるか？」をダイレクトに伝えられる[@King2000-ce]
