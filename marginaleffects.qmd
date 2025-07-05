@@ -155,7 +155,11 @@ cowplot::plot_grid(plotlist = list(p1, p2, p3, p4), nrow = 2)
 
 rhc <- data.table::fread("rhc.csv")
 
-rhc_prep <- data.table::setDT(rhc) |> 
+used_cols <- c("death_yn", "death_01", "death_days","swang1", "swang_yn", "cat_chf", "cat1", "age", "crea1", "sex", "race", "edu", "income", "wtkilo1", 
+  "temp1", "meanbp1", "resp1", "hrt1", "pafi1", "paco21", "ph1", "wblc1", "hema1", 
+  "sod1", "pot1", "bili1", "alb1", "cardiohx", "chfhx", "immunhx", "transhx", "amihx")
+
+rhc_prep <- data.table::setDT(rhc)  |> 
   datawizard::data_modify(
       death_01 = fifelse(death == "Yes", 1, 0),
       death_days_pre = fcase(
@@ -173,7 +177,10 @@ rhc_prep <- data.table::setDT(rhc) |>
 ) |> 
   tidyr::drop_na(
     death_01, swang1, cat_chf, age, sex, race, edu, income, wtkilo1, temp1, meanbp1, resp1, hrt1, pafi1, paco21, ph1, wblc1, hema1, sod1, pot1, crea1, bili1, alb1, cardiohx, chfhx, immunhx, transhx, amihx
-  )
+  ) |> 
+  dplyr::select(all_of(used_cols))
+
+
 
 dd <- rms::datadist(rhc_prep)
 options("datadist" = dd)
@@ -621,6 +628,50 @@ estimand = "ATE"
 
 print(wout)
 
+dplyr::mutate(rhc_prep, weights = wout$weights) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
+
+weighted_spline_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+               data    = rhc_prep, 
+               family = binomial,
+               weightit = wout)
+
+#Compute effects; RR and confidence interval
+
+cat("Risk ratio and 95% confidence interval\n")
+
+marginaleffects::avg_comparisons(weighted_spline_fit,
+                variables = "swang1",
+                comparison = "lnratioavg",
+                transform = "exp")
+
+
+```
+
+
+## G-computationの応用～機械学習を用いた手法
+
+- 厳密にはStandardizationとは違うが・・・・・・
+- Datasetを倍にして機械学習で推定する方法をD learnerという
+- T learner
+- X learner?
+ 
+## 実践⑤
+
+```{r}
+
+set.seed(42)
+
+wout <- WeightIt::weightit(formula = swang_yn ~ cat_chf + age + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx, data = rhc_prep, 
+method = "glm", 
+estimand = "ATE"
+)
+
+print(wout)
+
+dplyr::mutate(rhc_prep)
+
 weighted_spline_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = rhc_prep, 
                family = binomial,
@@ -628,6 +679,8 @@ weighted_spline_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_c
 
 summary(weighted_spline_fit)
 ```
+
+
 ## G-computationの利点
 
 -   「この集団の介入を変えたら、どの程度良くなるか？」をダイレクトに伝えられる[@King2000-ce]
@@ -636,13 +689,16 @@ summary(weighted_spline_fit)
 
 ## Average marginal prediction
 
-通常のアウトカム式のみで一発勝負 ここはDoubly robustは使っちゃいけない
+- 通常のアウトカム式のみで一発勝負 ここはDoubly robustは使っちゃいけない
 
 ## 因果関係の場合
 
-SUTVAの原理
+- Doubly robustは使っても良い
+  - ただし、効率が悪い可能性もあり・・・・・・
 
 # G-computationでのAdvancedな統計結果の伝え方
+
+
 
 ## そのため・・・・・・
 
