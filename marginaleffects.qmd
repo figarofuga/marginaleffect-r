@@ -663,10 +663,16 @@ marginaleffects::avg_comparisons(weighted_spline_fit,
 
 set.seed(42)
 
-wout <- WeightIt::weightit(formula = swang_yn ~ cat_chf + age + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx, data = rhc_prep, 
-method = "glm", 
-estimand = "ATE"
-)
+airbnb_split <- initial_split(airbnb)
+train = training(airbnb_split)
+test = testing(airbnb_split)
+
+xgb = boost_tree(mode = "regression", engine = "xgboost")
+
+mod = recipe(airbnb, price ~ .) |>
+  step_dummy(all_nominal_predictors()) |>
+  workflow(spec = xgb) |>
+  fit(train)
 
 print(wout)
 
