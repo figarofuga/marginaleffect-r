@@ -43,6 +43,7 @@ library(survival)
 library(cowplot)
 library(MatchIt)
 library(WeightIt)
+library(tidymodels)
 ```
 
 # 回帰分析について
@@ -663,27 +664,34 @@ marginaleffects::avg_comparisons(weighted_spline_fit,
 
 set.seed(42)
 
-airbnb_split <- initial_split(airbnb)
-train = training(airbnb_split)
-test = testing(airbnb_split)
+rhc_ml <- dplyr::mutate(rhc_prep, death_01 = factor(death_01))
 
-xgb = boost_tree(mode = "regression", engine = "xgboost")
+rhc_split <- rsample::initial_validation_split(rhc_ml)
 
-mod = recipe(airbnb, price ~ .) |>
-  step_dummy(all_nominal_predictors()) |>
-  workflow(spec = xgb) |>
-  fit(train)
+train_dt <- rsample::training(rhc_split)
+validation_dt <- rsample::validation(rhc_split)
+test_dt <- rsample::testing(rhc_split)
 
-print(wout)
+xgb_spec <- boost_tree(mode = "classification", engine = "xgboost")
 
-dplyr::mutate(rhc_prep)
+lhs <- "death_01"
 
-weighted_spline_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
-               data    = rhc_prep, 
-               family = binomial,
-               weightit = wout)
+rhs <- c("swang1", "cat_chf", "cat1", "age", "crea1", "sex", "race", "edu", "income", 
+"wtkilo1", "temp1", "meanbp1", "resp1", "hrt1", "pafi1", "paco21", 
+"ph1", "wblc1", "hema1", "sod1", "pot1", "bili1", "alb1", "cardiohx", 
+"chfhx", "immunhx", "transhx", "amihx")
 
-summary(weighted_spline_fit)
+rec <- recipe(rhc_ml, death_01 ~ swang1 + cat_chf + cat1 + age + crea1 + sex + race + 
+    edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + 
+    pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + 
+    alb1 + cardiohx + chfhx + immunhx + transhx + amihx) |>
+  step_dummy(all_nominal_predictors()) 
+
+wf <- workflows::workflow() |>
+  workflows::add_model(xgb_spec) |>
+  workflows::add_recipe(rec) |>
+  fit(train_dt)
+
 ```
 
 
