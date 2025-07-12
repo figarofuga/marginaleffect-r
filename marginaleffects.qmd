@@ -297,7 +297,7 @@ bispline_fit <- rms::lrm(formula =  death_01 ~ swang1 + cat_chf + rcs(age, 3) * 
 spline_dat2 <- rms::Predict(bispline_fit, age, crea1, fun = exp)
 
 
-plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~yhat, opacity = 0.5) |>
+spline_fig2 <- plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~yhat, opacity = 0.5) |>
       add_trace(type="mesh3d") |>
       layout(
     title = list(
@@ -307,6 +307,7 @@ plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~yhat, opacity = 0.5) |>
     )
   )
 
+spline_fig2
 # rms::bplot(spline_dat2, lfun = wireframe)
 
 ```
@@ -386,6 +387,8 @@ plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~yhat, opacity = 0.5) |>
 
 ![](image/gformula.drawio.png)
 
+
+
 ## 実践①
 
 :::: {.columns}
@@ -394,11 +397,11 @@ plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~yhat, opacity = 0.5) |>
 
 ```{r}
 
-marginaleffects::predictions(monospline_fit) |> 
+rawdata <- marginaleffects::predictions(monospline_fit) |> 
   tibble::as_tibble() |> 
-  dplyr::select(rowid, swang1, estimate, conf.low, conf.high, death_01) |> 
-  print()
-  
+  dplyr::select(rowid, swang1, estimate, conf.low, conf.high, death_01) 
+
+print(rawdata)  
 
 ```
 
@@ -411,10 +414,12 @@ marginaleffects::predictions(monospline_fit) |>
 swang_margin <- marginaleffects::predictions(monospline_fit, variables = "swang1")
 
 
-swang_margin |> 
+doubleddata <- swang_margin |> 
   tibble::as_tibble() |> 
-  dplyr::select(rowid, swang1, estimate, conf.low, conf.high, death_01) |> 
-  print()
+  dplyr::select(rowid, swang1, estimate, conf.low, conf.high, death_01) 
+  
+
+print(doubleddata)
 
 ```
 
@@ -523,13 +528,15 @@ marginaleffects::avg_predictions(
 
 ```{r}
 
+cat("CHFの患者のみ抜き出し、RHC- No RHCのRiskの差を一人ずつ計算を計算する")
+
 marginaleffects::comparisons(
   monospline_fit, 
   variables = "swang1", 
   newdata = subset(cat_chf == "CHF")
   ) |> 
   tibble::as_tibble() |> 
-  dplyr::select(swang1, cat_chf, contrast,estimate, conf.low, conf.high, death_01) |> 
+  dplyr::select(swang1, cat_chf, estimate, conf.low, conf.high, death_01) |> 
   print()
 
 cat("ここから、患者背景がCHFである患者の平均のRisk ratioを計算する")
@@ -570,12 +577,16 @@ print(mout)
 
 dat_m <- MatchIt::match_data(mout)
 
+cat("Matched data\n")
+
 tibble::as_tibble(dat_m)
 
 matched_spline_fit <- glm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = dat_m, 
                family = binomial,
                weights = weights)
+
+# TODO: 2列に分けてわかりやすくする。重みもいれること
 
 matched_att <- avg_comparisons(matched_spline_fit,
                 variables = "swang1",
@@ -654,9 +665,9 @@ marginaleffects::avg_comparisons(weighted_spline_fit,
 ## G-computationの応用～機械学習を用いた手法
 
 - 厳密にはStandardizationとは違うが・・・・・・
-- Datasetを倍にして機械学習で推定する方法をD learnerという
-- T learner
-- X learner?
+- Datasetを倍にして機械学習で推定する方法をS-learnerという
+- 因果推定を行う場合は、重み付けも行うD-learnerやX-learnerもある
+- Classificationの場合は信頼区間は簡単には出せないのが難点
  
 ## 実践⑤
 
@@ -665,12 +676,6 @@ marginaleffects::avg_comparisons(weighted_spline_fit,
 set.seed(42)
 
 rhc_ml <- dplyr::mutate(rhc_prep, death_01 = factor(death_01))
-
-rhc_split <- rsample::initial_validation_split(rhc_ml)
-
-train_dt <- rsample::training(rhc_split)
-validation_dt <- rsample::validation(rhc_split)
-test_dt <- rsample::testing(rhc_split)
 
 xgb_spec <- boost_tree(mode = "classification", engine = "xgboost")
 
@@ -687,10 +692,43 @@ rec <- recipe(rhc_ml, death_01 ~ swang1 + cat_chf + cat1 + age + crea1 + sex + r
     alb1 + cardiohx + chfhx + immunhx + transhx + amihx) |>
   step_dummy(all_nominal_predictors()) 
 
-wf <- workflows::workflow() |>
-  workflows::add_model(xgb_spec) |>
-  workflows::add_recipe(rec) |>
-  fit(train_dt)
+rhc_ml2 <- rec |> 
+  recipes::prep() |> 
+  recipes::bake(new_data = NULL)
+
+wf <- workflows::workflow() |> 
+  workflows::add_model(xgb_spec) |> 
+  workflows::add_variables(
+    outcomes = death_01, 
+    predictors = dplyr::select(rhc_ml2, -death_01) |> names()
+  ) |> 
+  fit(rhc_ml2)
+
+
+doubleddata <- marginaleffects::datagrid(newdata = rhc_ml, swang1 = unique, grid_type = "counterfactual")
+
+newdata2 <- rec |> 
+  recipes::prep() |> 
+  recipes::bake(new_data = doubleddata)
+
+dplyr::bind_cols(
+  newdata2, 
+  predict(wf, new_data = newdata2, type = "class"), 
+  predict(wf, new_data = newdata2, type = "prob")
+) |> 
+  dplyr::mutate(
+    swang1 = if_else(swang1_RHC == 0, "No RHC", "RHC")
+  ) |> 
+  dplyr::rename(
+    predicted_class = .pred_class, 
+    probability_1 = .pred_1
+  ) |> 
+  dplyr::select(
+    swang1, death_01, probability_1, predicted_class) |> 
+  dplyr::summarise(
+    mean_death_prob = mean(probability_1, na.rm = T), 
+    .by = swang1
+  )
 
 ```
 
@@ -699,31 +737,29 @@ wf <- workflows::workflow() |>
 
 -   「この集団の介入を変えたら、どの程度良くなるか？」をダイレクトに伝えられる[@King2000-ce]
     -   InteractionやSplineなど複雑な式でもシンプルに結果を伝えられる
--   因果と予測を両方行う事が可能！
+-   予測と因果を両方行う事が可能！
 
-## Average marginal prediction
+## 予測～Average marginal prediction
 
 - 通常のアウトカム式のみで一発勝負 ここはDoubly robustは使っちゃいけない
 
-## 因果関係の場合
+## 因果～Average comparison
 
-- Doubly robustは使っても良い
+- Doubly robustを使った方が安心かもしれない
   - ただし、効率が悪い可能性もあり・・・・・・
 
-# G-computationでのAdvancedな統計結果の伝え方
+## G-computationでのAdvancedな統計結果の伝え方
 
-
-
-## そのため・・・・・・
-
-例えば、Matching→G computation あるいは、元々のInclusionを入れて除外したあとにIPW→アウトカム式を入れる そうすることでDoubly robust estimationとなる
-
-## どういう式を作る？
-
-基本は、ドメイン知識を入れる ただし、どのような関係性かをみるのにはAICとか、尤度比検定をしても良いかも
+- 伝えるEstimandを正確に伝える
+- 「誰に」、「もし＊＊したら」、「平均的にどのような効果？」が「どれくらいの確実性」あるかを言う
+  - 出来るだけ、臨床的に意味がある差かどうかを考える
 
 # G-computationの限界
 
+- 基本的には通常の回帰と一緒
+  - Unobserved confoundingやMisspecificationに弱い
+- 予測の為ではなく因果よりと考えたほうが良い
+  - モデル作成でStep wiseや機械学習のようなやり方はしないほうが良い
 
 # 最後に
 
@@ -734,6 +770,9 @@ wf <- workflows::workflow() |>
 > すべてのモデルは誤っている。しかし、そのうちのいくつかは役に立つ。
 
 ## RでのMarginal effectsの使い方
+
+- `emmeans`, `marginaleffects`, `easystats`の`modelbased`など
+- AIMの論文にも記載があり使いやすいのは`marginaleffects`
 
 ## Thank you for your listening!!
 
