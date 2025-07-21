@@ -190,11 +190,11 @@ full_fit <- glm(formula =  death_01 ~ swang1 + cat_chf + age + sex + race + edu 
                family = binomial,
                data    = rhc_prep)
 
-interact_fit <- glm(formula =  death_01 ~ swang1*cat_chf + age + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+interact_fit <- glm(formula =  death_01 ~ swang1 + cat_chf + swang1:cat_chf + age + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                family = binomial,
                data    = rhc_prep)
 
-monospline_fit <- glm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+monospline_fit <- glm(formula =  death_01 ~ swang1 + cat_chf + swang1:cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                family = binomial,
                data    = rhc_prep)
 
@@ -275,9 +275,10 @@ monospline_fit_lrm <- rms::lrm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4
                data    = rhc_prep)
 
 
-spline_fig1 <- rms::Predict(monospline_fit_lrm, age, fun = exp) |> 
+spline_fig1 <- rms::Predict(monospline_fit_lrm, age, fun = exp, ref.zero = TRUE) |> 
   ggplot() + 
-    labs(y = "Probability for Death")
+    labs(y = "aOR for Death") + 
+  theme_bw()
 
 
 
@@ -294,7 +295,7 @@ spline_fig1
 bispline_fit <- rms::lrm(formula =  death_01 ~ swang1 + cat_chf + rcs(age, 3) * rcs(crea1, 3) + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = rhc_prep)
 
-spline_dat2 <- rms::Predict(bispline_fit, age, crea1, fun = exp)
+spline_dat2 <- rms::Predict(bispline_fit, age, crea1, fun = exp) 
 
 
 spline_fig2 <- plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~yhat, opacity = 0.5) |>
@@ -308,7 +309,6 @@ spline_fig2 <- plot_ly(spline_dat2, x = ~age, y = ~crea1, z = ~yhat, opacity = 0
   )
 
 spline_fig2
-# rms::bplot(spline_dat2, lfun = wireframe)
 
 ```
 
@@ -328,7 +328,7 @@ spline_fig2
 ![](image/JAMA_causal.png)
 
 - "誰に"、"どの統計量で"計測するのか？
-- Causal estimandを決める [@Dahabreh2024-ea]
+- <span style="color:red;">**Causal Estimand**</span>を決める [@Dahabreh2024-ea]
 
 
 ## 我々(臨床医)のしたい事
@@ -354,6 +354,7 @@ spline_fig2
   - 他の値を固定した時に、その因子を1単位変化した時の平均的なアウトカムの変化量
 - その結果、係数(OR, HRなど)という1つの値にまるめてしまう
 - 複雑な関係性をこの係数のみを報告する事で逆にわかりにくくなる事もある
+- Ex. HFmrEFとHFrEFでARNIの効果が変わる
  
 ## じゃあ、どうやって報告する？
 
@@ -370,18 +371,15 @@ spline_fig2
 -   多変量解析は解釈がわかりにくい！
     -   特に、InteractionやSplineが入るとよりわかりにくい
     -   通常の解析だと、結果は集団全体の平均で丸め込まれてしまう
-        -   **Estimandをどうやって出せばいい？**
+        -   <span style="color:red;">**Estimandをどうやって出せばいい？**</span>
 
-# Standardization and the prametric g-formulaの基礎
+# Standardizationあるいは\ prametric g-formulaの基礎
 
 ## Marginal effectsという選択肢
 
--   G-computationを用いて**限界効果**を出す
-
-## G-computation
-
+-   G-computationを用いて**限界効果**を出す手法
 -   本来は、結果のStandardizationの手法
--   Estimandを決定する方法もある
+-   Estimandを決定する方法でもある[@Hernan2024-HERCIW]
 
 ## G-computationの考え方
 
@@ -394,6 +392,8 @@ spline_fig2
 :::: {.columns}
 
 ::: {.column width="50%"}
+
+- 生データ
 
 ```{r}
 
@@ -409,6 +409,7 @@ print(rawdata)
 
 ::: {.column width="50%"}
 
+- 元データ+swang1列のみ変更して複製したデータセット
 ```{r}
 
 swang_margin <- marginaleffects::predictions(monospline_fit, variables = "swang1")
@@ -427,7 +428,6 @@ print(doubleddata)
 ::::
 
 - 行数が2倍(5733→11466)になっている事に注意！
-- swang1列のみ変更したデータセットを作成
 
 ## 実践②
 
@@ -441,7 +441,7 @@ marginaleffects::avg_predictions(monospline_fit, variables = "swang1")
 - 差をとったらRisk differenceを出せる
 - この結果を変形する事で色々な数値を出せる。
 
-## 実践②
+## 実践③
 
 :::: {.columns}
 
@@ -493,7 +493,7 @@ marginaleffects::avg_comparisons(
 -   元データのうち、元々Interventionが0/1の群だけで同様の事をするとATT/ATUも推定可能
 -   Interventionだけでなくても、興味がある変数を動かす事で周辺効果(marginal effect)を出すことが可能
 
-## 実践③
+## 実践④
 
 - 例えば、患者背景がCHFでRHCの効果がどうなるかをみたい時
 
@@ -512,8 +512,6 @@ marginaleffects::predictions(
   dplyr::select(rowid, swang1, cat_chf, estimate, conf.low, conf.high, death_01) |> 
   print()
 
-cat("ここから、swang 1の値毎にestimateを平均する")
-
 marginaleffects::avg_predictions(
   monospline_fit, 
   variables = "swang1", 
@@ -522,14 +520,15 @@ marginaleffects::avg_predictions(
 
 ```
 
+- まずは、原疾患が心不全以外の患者を抜粋
+- RHCのみ0と1両者でそれ以外の列を複製したデータセットを作成
+- RHC毎の死亡率を計算
+
 :::
 
 ::: {.column width="50%"}
 
 ```{r}
-
-cat("CHFの患者のみ抜き出し、RHC- No RHCのRiskの差を一人ずつ計算を計算する")
-
 marginaleffects::comparisons(
   monospline_fit, 
   variables = "swang1", 
@@ -538,8 +537,6 @@ marginaleffects::comparisons(
   tibble::as_tibble() |> 
   dplyr::select(swang1, cat_chf, estimate, conf.low, conf.high, death_01) |> 
   print()
-
-cat("ここから、患者背景がCHFである患者の平均のRisk ratioを計算する")
 
 marginaleffects::avg_comparisons(
   monospline_fit, 
@@ -550,6 +547,9 @@ marginaleffects::avg_comparisons(
   ) 
 
 ```
+
+- CHFの患者のみ抜き出し、回帰モデルを元にRHCとNo RHCのRiskの差を一人ずつ計算を計算する
+- 平均して1つの数値を出す
 
 :::
 
@@ -562,7 +562,12 @@ marginaleffects::avg_comparisons(
 1.   残った
 1.   どの群を選ぶかでATT/ATE/ATUも簡単に計算可能！[@Greifer2025-me]
 
-## 実践④
+## 実践⑤～準備
+
+- まずはPropensity score match行う
+- Matched dataを出す
+- Propensity scoreに用いた共変量を**含めて**アウトカムの回帰モデルを作成する
+- この重みも用いることに注意！
 
 ```{r}
 
@@ -577,17 +582,46 @@ print(mout)
 
 dat_m <- MatchIt::match_data(mout)
 
-cat("Matched data\n")
+cat("matched data \n")
 
-tibble::as_tibble(dat_m)
+tibble::as_tibble(dplyr::select(dat_m, death_yn, swang1, cat_chf, age, distance, weights))
+
+cat("アウトカムモデル \n")
 
 matched_spline_fit <- glm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = dat_m, 
                family = binomial,
                weights = weights)
 
-# TODO: 2列に分けてわかりやすくする。重みもいれること
+summary(matched_spline_fit)
 
+```
+
+
+
+
+## 実践⑤～結果
+
+::: {.panel-tabset}
+
+### ATEの場合
+
+```{r}
+
+matched_ate <- avg_comparisons(matched_spline_fit,
+                variables = "swang1",
+                vcov = ~subclass, 
+                comparison = "lnratioavg", 
+                transform = "exp"
+                )
+
+matched_ate
+
+```
+
+### ATTの場合
+
+```{r}
 matched_att <- avg_comparisons(matched_spline_fit,
                 variables = "swang1",
                 vcov = ~subclass,
@@ -598,14 +632,11 @@ matched_att <- avg_comparisons(matched_spline_fit,
 
 matched_att 
 
-matched_ate <- avg_comparisons(matched_spline_fit,
-                variables = "swang1",
-                vcov = ~subclass, 
-                comparison = "lnratioavg", 
-                transform = "exp"
-                )
+```
 
-matched_ate
+### ATCの場合
+
+```{r}
 
 matched_atc <- avg_comparisons(matched_spline_fit,
                 variables = "swang1",
@@ -619,6 +650,8 @@ matched_atc
 
 ```
 
+:::
+
 
 ## G-computationの応用～Doubly robust
 
@@ -630,6 +663,8 @@ matched_atc
 ## 実践⑤
 
 ```{r}
+
+# TODO 見やすくなおす
 
 set.seed(42)
 
