@@ -598,8 +598,6 @@ summary(matched_spline_fit)
 ```
 
 
-
-
 ## 実践⑤～結果
 
 ::: {.panel-tabset}
@@ -607,6 +605,15 @@ summary(matched_spline_fit)
 ### ATEの場合
 
 ```{r}
+
+marginaleffects::comparisons(
+  matched_spline_fit, 
+  variables = "swang1", 
+  vcov = ~subclass) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(rowid, contrast, estimate, conf.low, conf.high, death_01, swang1, weights)
+
+cat("ここから計算する")
 
 matched_ate <- avg_comparisons(matched_spline_fit,
                 variables = "swang1",
@@ -622,6 +629,17 @@ matched_ate
 ### ATTの場合
 
 ```{r}
+
+marginaleffects::comparisons(
+  matched_spline_fit, 
+  newdata = subset(swang1 == "RHC"),
+  variables = "swang1", 
+  vcov = ~subclass) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(rowid, contrast, estimate, conf.low, conf.high, death_01, swang1, weights)
+
+cat("ここから計算する")
+
 matched_att <- avg_comparisons(matched_spline_fit,
                 variables = "swang1",
                 vcov = ~subclass,
@@ -637,6 +655,17 @@ matched_att
 ### ATCの場合
 
 ```{r}
+
+marginaleffects::comparisons(
+  matched_spline_fit, 
+  newdata = subset(swang1 == "No RHC"),
+  variables = "swang1", 
+  vcov = ~subclass) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(rowid, contrast, estimate, conf.low, conf.high, death_01, swang1, weights)
+
+cat("ここから計算する")
+
 
 matched_atc <- avg_comparisons(matched_spline_fit,
                 variables = "swang1",
@@ -660,35 +689,41 @@ matched_atc
 1.   上記を組み合わせてDoubly robustを計算可能
 1.   どの群を選ぶかでATT/ATE/ATUも簡単に計算可能！
 
-## 実践⑤
+## 実践⑤～結果
+
+::: {.panel-tabset}
+
+### ATEの場合
 
 ```{r}
 
-# TODO 見やすくなおす
 
 set.seed(42)
 
-wout <- WeightIt::weightit(formula = swang_yn ~ cat_chf + age + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx, data = rhc_prep, 
+wout_ate <- WeightIt::weightit(formula = swang_yn ~ cat_chf + age + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx, data = rhc_prep, 
 method = "glm", 
 estimand = "ATE"
 )
 
-print(wout)
+print(wout_ate)
 
-dplyr::mutate(rhc_prep, weights = wout$weights) |> 
+dplyr::mutate(rhc_prep, weights = wout_ate$weights) |> 
   tibble::as_tibble() |> 
   dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
+  
 
-weighted_spline_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+weighted_spline_ate_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = rhc_prep, 
                family = binomial,
-               weightit = wout)
+               weightit = wout_ate)
+
+summary(weighted_spline_ate_fit)
 
 #Compute effects; RR and confidence interval
 
 cat("Risk ratio and 95% confidence interval\n")
 
-marginaleffects::avg_comparisons(weighted_spline_fit,
+marginaleffects::avg_comparisons(weighted_spline_ate_fit,
                 variables = "swang1",
                 comparison = "lnratioavg",
                 transform = "exp")
@@ -696,6 +731,86 @@ marginaleffects::avg_comparisons(weighted_spline_fit,
 
 ```
 
+### ATTの場合
+
+```{r}
+
+
+set.seed(42)
+
+wout_att <- WeightIt::weightit(formula = swang_yn ~ cat_chf + age + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx, data = rhc_prep, 
+method = "glm", 
+estimand = "ATT"
+)
+
+print(wout_att)
+
+dplyr::mutate(rhc_prep, weights = wout_att$weights) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
+  
+
+weighted_spline_att_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+               data    = rhc_prep, 
+               family = binomial,
+               weightit = wout_att)
+
+summary(weighted_spline_att_fit)
+
+#Compute effects; RR and confidence interval
+
+cat("Risk ratio and 95% confidence interval\n")
+
+marginaleffects::avg_comparisons(
+  weighted_spline_att_fit,
+  newdata = subset(swang1 == "RHC"),
+  variables = "swang1",
+  comparison = "lnratioavg",
+  transform = "exp")
+
+
+```
+
+### ATC(U)の場合
+
+```{r}
+
+
+set.seed(42)
+
+wout_atc <- WeightIt::weightit(formula = swang_yn ~ cat_chf + age + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + crea1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx, data = rhc_prep, 
+method = "glm", 
+estimand = "ATC"
+)
+
+print(wout_atc)
+
+dplyr::mutate(rhc_prep, weights = wout_atc$weights) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
+  
+
+weighted_spline_atc_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
+               data    = rhc_prep, 
+               family = binomial,
+               weightit = wout_atc)
+
+summary(weighted_spline_atc_fit)
+
+#Compute effects; RR and confidence interval
+
+cat("Risk ratio and 95% confidence interval\n")
+
+marginaleffects::avg_comparisons(
+  weighted_spline_atc_fit,
+  newdata = subset(swang1 == "No RHC"),   
+  variables = "swang1",
+  comparison = "lnratioavg",
+  transform = "exp")
+
+
+```
+:::
 
 ## G-computationの応用～機械学習を用いた手法
 
@@ -707,6 +822,8 @@ marginaleffects::avg_comparisons(weighted_spline_fit,
 ## 実践⑤
 
 ```{r}
+
+# TODO: 見やすく変える
 
 set.seed(42)
 
