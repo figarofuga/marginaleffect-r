@@ -697,6 +697,7 @@ matched_atc
 
 ```{r}
 
+# TODO: 言葉の説明をもっとちゃんとつける
 
 set.seed(42)
 
@@ -817,19 +818,20 @@ marginaleffects::avg_comparisons(
 - 厳密にはStandardizationとは違うが・・・・・・
 - Datasetを倍にして機械学習で推定する方法をS-learnerという
 - 因果推定を行う場合は、重み付けも行うD-learnerやX-learnerもある
-- Classificationの場合は信頼区間は簡単には出せないのが難点
+- 信頼区間やP値が出せないのが難点
  
-## 実践⑤
+## 実践⑤ モデル作成
 
 ```{r}
 
-# TODO: 見やすく変える
+# TODO: 言葉の説明をもっとちゃんとつける
 
 set.seed(42)
 
 rhc_ml <- dplyr::mutate(rhc_prep, death_01 = factor(death_01))
 
 xgb_spec <- boost_tree(mode = "classification", engine = "xgboost")
+
 
 lhs <- "death_01"
 
@@ -852,18 +854,44 @@ wf <- workflows::workflow() |>
   workflows::add_model(xgb_spec) |> 
   workflows::add_variables(
     outcomes = death_01, 
-    predictors = dplyr::select(rhc_ml2, -death_01) |> names()
+    predictors = c("age", "crea1", "edu", "wtkilo1", "temp1", "meanbp1", "resp1", 
+"hrt1", "pafi1", "paco21", "ph1", "wblc1", "hema1", "sod1", "pot1", 
+"bili1", "alb1", "cardiohx", "chfhx", "immunhx", "transhx", "amihx", 
+"swang1_RHC", "cat_chf_Others", "cat1_CHF", "cat1_Cirrhosis", 
+"cat1_Colon.Cancer", "cat1_Coma", "cat1_COPD", "cat1_Lung.Cancer", 
+"cat1_MOSF.w.Malignancy", "cat1_MOSF.w.Sepsis", "sex_Male", "race_other", 
+"race_white", "income_X.11..25k", "income_X.25..50k", "income_Under..11k"
+)
   ) |> 
   fit(rhc_ml2)
 
+cat("モデルの中身")
+
+print(wf)
+
+```
+
+## 実践⑤ 仮想データ作成
+
+```{r}
 
 doubleddata <- marginaleffects::datagrid(newdata = rhc_ml, swang1 = unique, grid_type = "counterfactual")
+
+tibble::as_tibble(doubleddata) |> 
+  dplyr::select(-death_01)
 
 newdata2 <- rec |> 
   recipes::prep() |> 
   recipes::bake(new_data = doubleddata)
 
-dplyr::bind_cols(
+
+```
+
+## 実践⑤ 仮想データ作成
+
+```{r}
+
+res_raw <- dplyr::bind_cols(
   newdata2, 
   predict(wf, new_data = newdata2, type = "class"), 
   predict(wf, new_data = newdata2, type = "prob")
@@ -876,14 +904,19 @@ dplyr::bind_cols(
     probability_1 = .pred_1
   ) |> 
   dplyr::select(
-    swang1, death_01, probability_1, predicted_class) |> 
+    swang1, death_01, probability_1, predicted_class) 
+
+print(res_raw)
+
+marginal_res <- res_raw |>
   dplyr::summarise(
     mean_death_prob = mean(probability_1, na.rm = T), 
     .by = swang1
   )
 
-```
+print(marginal_res)
 
+```
 
 ## G-computationの利点
 
