@@ -10,7 +10,7 @@
         "packages": "fonts-noto-cjk,fonts-ipaexfont"
     },
 		"ghcr.io/rocker-org/devcontainer-features/r-packages:1": {
-			"packages": "DT,data.table,here,skimr,janitor,easystats,tinytable,tinyplot,tableone,cowplot,plotthis,plotly,ggsurvfit,finalfit,MatchIt,WeightIt,modelsummary,marginaleffects,broom,rms,Hmisc,qreport,VGAM,tidymodels"
+			"packages": "DT,gt,data.table,here,skimr,janitor,easystats,tinytable,tinyplot,tableone,cowplot,plotthis,plotly,ggsurvfit,finalfit,MatchIt,WeightIt,modelsummary,marginaleffects,broom,rms,Hmisc,qreport,VGAM,tidymodels,xgboost"
 		},
 		"ghcr.io/rocker-org/devcontainer-features/rstudio-server:0": {}
 	},
