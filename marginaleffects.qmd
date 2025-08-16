@@ -589,8 +589,9 @@ marginaleffects::avg_comparisons(
 ## G-computationの応用～Propensity score match
 
 1.   Propensity score matchを計算
-1.   Matched cohortを作成(仮想Randomized？)
-1.   残った
+1.   Matched cohortを作成
+1.   その上で、共変量を入れたアウトカムモデルで回帰を行う
+  1. RCTの多変量と同じでバランスをちゃんと取れる
 1.   どの群を選ぶかでATT/ATE/ATUも簡単に計算可能！[@Greifer2025-me]
 
 ## 実践⑤～準備
@@ -630,6 +631,8 @@ summary(matched_spline_fit)
 
 
 ## 実践⑤～結果
+
+- G-computationを各々の群で行う
 
 ::: {.panel-tabset}
 
@@ -722,13 +725,17 @@ matched_atc
 
 ## 実践⑤～結果
 
+1. treatmentを目的としたLogistic regressionを作成して、予測式を作成
+1. 予測式とATE/ATT/ATCでそれぞれ重み付けの計算方法を変える(ATOなどもあり)
+1. この重みを考慮したアウトカムモデルを作成する
+1. このアウトカムモデルで、各データでのG-computationを行う
+  1. ATEは全体、ATTはRHC使用者、ATCはRHC不使用者
+
 ::: {.panel-tabset}
 
 ### ATEの場合
 
 ```{r}
-
-# TODO: 言葉の説明をもっとちゃんとつける
 
 set.seed(42)
 
@@ -737,29 +744,34 @@ method = "glm",
 estimand = "ATE"
 )
 
+cat(" \n 重み付けの式 \n")
+
 print(wout_ate)
+
+cat("\n 重みを元のデータセットに追加 \n")
 
 dplyr::mutate(rhc_prep, weights = wout_ate$weights) |> 
   tibble::as_tibble() |> 
   dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
   
+  
+cat("\n 重みを考慮したアウトカムモデル \n")
 
 weighted_spline_ate_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = rhc_prep, 
                family = binomial,
                weightit = wout_ate)
 
-summary(weighted_spline_ate_fit)
+print(weighted_spline_ate_fit)
 
 #Compute effects; RR and confidence interval
 
-cat("Risk ratio and 95% confidence interval\n")
+cat("\n Risk ratio and 95% confidence interval\n")
 
 marginaleffects::avg_comparisons(weighted_spline_ate_fit,
                 variables = "swang1",
                 comparison = "lnratioavg",
                 transform = "exp")
-
 
 ```
 
@@ -775,23 +787,28 @@ method = "glm",
 estimand = "ATT"
 )
 
+cat(" \n 重み付けの式 \n")
+
 print(wout_att)
+
+cat("\n 重みを元のデータセットに追加 \n")
 
 dplyr::mutate(rhc_prep, weights = wout_att$weights) |> 
   tibble::as_tibble() |> 
   dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
   
+cat("\n 重みを考慮したアウトカムモデル \n")
 
 weighted_spline_att_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = rhc_prep, 
                family = binomial,
                weightit = wout_att)
 
-summary(weighted_spline_att_fit)
+print(weighted_spline_att_fit)
 
 #Compute effects; RR and confidence interval
 
-cat("Risk ratio and 95% confidence interval\n")
+cat("\n Risk ratio and 95% confidence interval\n")
 
 marginaleffects::avg_comparisons(
   weighted_spline_att_fit,
@@ -815,23 +832,28 @@ method = "glm",
 estimand = "ATC"
 )
 
+cat(" \n 重み付けの式 \n")
+
 print(wout_atc)
+
+cat("\n 重みを元のデータセットに追加 \n")
 
 dplyr::mutate(rhc_prep, weights = wout_atc$weights) |> 
   tibble::as_tibble() |> 
   dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
-  
+
+cat("\n 重みを考慮したアウトカムモデル \n")
 
 weighted_spline_atc_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = rhc_prep, 
                family = binomial,
                weightit = wout_atc)
 
-summary(weighted_spline_atc_fit)
+print(weighted_spline_atc_fit)
 
 #Compute effects; RR and confidence interval
 
-cat("Risk ratio and 95% confidence interval\n")
+cat("\n Risk ratio and 95% confidence interval \n")
 
 marginaleffects::avg_comparisons(
   weighted_spline_atc_fit,
@@ -864,7 +886,6 @@ set.seed(42)
 rhc_ml <- dplyr::mutate(rhc_prep, death_01 = factor(death_01))
 
 xgb_spec <- boost_tree(mode = "classification", engine = "xgboost")
-
 
 lhs <- "death_01"
 
@@ -963,12 +984,13 @@ print(marginal_res)
 
 ## 予測～Average marginal prediction
 
-- 通常のアウトカム式のみで一発勝負 ここはDoubly robustは使っちゃいけない
+- 通常のアウトカム式のみで一発勝負
+- 一応Biasを避けた上でのBias補正方法も存在する[@grf-lab2024-jt]
 
 ## 因果～Average comparison
 
 - AIPWやTLMEを使った方が安心かもしれない
-  - ただし、効率が悪い可能性もあり・・・・・・
+  - ただし、効率が悪い可能性もあり
 
 ## G-computationでのAdvancedな統計結果の伝え方
 
