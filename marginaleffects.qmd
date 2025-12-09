@@ -534,6 +534,8 @@ marginaleffects::avg_comparisons(
 
 ```{r}
 
+summary(monospline_fit)
+
 marginaleffects::predictions(
   monospline_fit, 
   variables = "swang1", 
@@ -551,7 +553,8 @@ marginaleffects::avg_predictions(
 
 ```
 
-- まずは、原疾患が心不全以外の患者を抜粋
+- まずは、交互作用項を入れたモデルを作成する
+- 原疾患が心不全以外の患者を抜粋
 - RHCのみ0と1両者でそれ以外の列を複製したデータセットを作成
 - RHC毎の死亡率を計算
 
@@ -1004,6 +1007,12 @@ print(marginal_res)
   - Unobserved confoundingやMisspecificationに弱い
 - 予測の為ではなく因果よりと考えたほうが良い
   - モデル作成でStep wiseや機械学習のようなやり方はしないほうが良い
+  
+# 自分の研究においては・・・・・・
+
+- AF患者において動悸およびそれ以外の症状(息切れ、めまい/失神、倦怠感)のHR-QOLへの影響をみた研究
+- 特に、**非動悸の患者においてもCAは有効なのか？**を疑問として提案
+- 動悸、息切れ、めまい/失神、倦怠感の有無
 
 # 最後に
 
