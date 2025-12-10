@@ -1012,7 +1012,16 @@ print(marginal_res)
 
 - AF患者において動悸およびそれ以外の症状(息切れ、めまい/失神、倦怠感)のHR-QOLへの影響をみた研究
 - 特に、**非動悸の患者においてもCAは有効なのか？**を疑問として提案
-- 動悸、息切れ、めまい/失神、倦怠感の有無
+- 動悸、息切れ、めまい/失神、倦怠感の有無でCAの有効性をみたかった
+
+## How to use marginal effects
+
+1. まずは、1年後のAFEQT-OSを予測するOLS modelを作成
+  1. Interventionの列を独立因子に入れておく(Rate, AAD, CA)
+  1. この時、BaselineのAFEQT-OSをSplineにしたり、各症状とInterventionでInteraction項を作成
+2. 全てのデータで、患者を3倍に拡張して(Interventionを全て"Rate", "AAD", "CA")にする
+3. 予測モデルを利用して、各患者でのPredicted AFEQT-OS score列を作成
+4. 症状がある患者だけを抽出して、平均、95%信頼区間を作成
 
 # 最後に
 
