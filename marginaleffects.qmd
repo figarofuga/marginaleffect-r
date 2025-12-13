@@ -1016,13 +1016,10 @@ print(marginal_res)
 
 ## How to use marginal effects
 
-1. まずは、1年後のAFEQT-OSを予測するOLS modelを作成
-  1. Interventionの列を独立因子に入れておく(Rate, AAD, CA)
-  1. この時、BaselineのAFEQT-OSをSplineにしたり、各症状とInterventionでInteraction項を作成
-2. 全てのデータで、患者を3倍に拡張して(Interventionを全て"Rate", "AAD", "CA")にする
-3. 予測モデルを利用して、各患者でのPredicted AFEQT-OS score列を作成
-4. 症状がある患者だけを抽出して、平均、95%信頼区間を作成
+![](image/af_symp.png)
 
+- さらに、これらのデータからCA - Rateなどを計算
+ 
 # 最後に
 
 ## Box先生の名言

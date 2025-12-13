@@ -32,6 +32,13 @@
         "8787": {
             "label": "RStudio IDE"
         }
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"asvetliakov.vscode-neovim"
+			]
+		}
 	}
 	// Configure tool-specific properties.
 	// "customizations": {},
