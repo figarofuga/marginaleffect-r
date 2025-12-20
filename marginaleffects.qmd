@@ -55,6 +55,7 @@ library(tidymodels)
 
 -   多くの統計ソフトに入っており、行うのが簡単
 
+<!-- TODO: 赤字になっていないのを直す -->
 -   ::: red
     *解釈性が高く、分かりやすい*
     :::
@@ -215,7 +216,7 @@ monospline_fit <- glm(formula =  death_01 ~ swang1 + cat_chf + swang1:cat_chf + 
 
 parameters::compare_models("Base model" = full_fit, 
                            exponentiate = TRUE, 
-                           select = "{estimate} [{ci}], p = {p}") |> 
+                           select = "{estimate} [{ci}]") |> 
   dplyr::filter(stringr::str_detect(Parameter, "age|swang1|cat")) |> 
   insight::display(format = "html") |>
   gt::tab_style(
@@ -248,7 +249,7 @@ parameters::compare_models("Base model" = full_fit,
 #   tinytable::style_tt(i = 1, j = 1:3, background = "white", color = "red", bold = TRUE)
 
 parameters::compare_models(list("Base model" = full_fit, "Interact model" = interact_fit), 
-                           exponentiate = TRUE, select = "{estimate} [{ci}], p = {p}") |> 
+                           exponentiate = TRUE, select = "{estimate} [{ci}]") |> 
   dplyr::filter(stringr::str_detect(Parameter, "age|swang1|cat")) |> 
   insight::display(format = "html") |>
   gt::tab_style(
@@ -279,7 +280,7 @@ parameters::compare_models(list("Base model" = full_fit, "Interact model" = inte
 #   tinytable::style_tt(i = 1, j = 1:4, background = "white", color = "red", bold = TRUE)
 
 parameters::compare_models(list("Base model" = full_fit, "Interact model" = interact_fit, "Spline model" = monospline_fit), 
-                           exponentiate = TRUE, select = "{estimate} [{ci}], p = {p}") |> 
+                           exponentiate = TRUE, select = "{estimate} [{ci}]") |> 
   dplyr::filter(stringr::str_detect(Parameter, "age|swang1|cat")) |> 
   insight::display(format = "html")  |>
   gt::tab_style(
@@ -527,14 +528,17 @@ marginaleffects::avg_comparisons(
 ## 実践④
 
 - 例えば、患者背景がCHFでRHCの効果がどうなるかをみたい時
+<!-- Todo: 醜いので直す -->
+```{r}
+summary(monospline_fit)
 
+```
 :::: {.columns}
 
 ::: {.column width="50%"}
 
 ```{r}
 
-summary(monospline_fit)
 
 marginaleffects::predictions(
   monospline_fit, 
@@ -598,7 +602,7 @@ marginaleffects::avg_comparisons(
 1.   どの群を選ぶかでATT/ATE/ATUも簡単に計算可能！[@Greifer2025-me]
 
 ## 実践⑤～準備
-
+<!-- Todo: 見にくいので直す。複数スライドに直す -->
 - まずはPropensity score match行う
 - Matched dataを出す
 - Propensity scoreに用いた共変量を**含めて**アウトカムの回帰モデルを作成する
@@ -634,6 +638,8 @@ summary(matched_spline_fit)
 
 
 ## 実践⑤～結果
+
+<!-- これも見にくいので複数スライドに分ける -->
 
 - G-computationを各々の群で行う
 
@@ -988,7 +994,7 @@ print(marginal_res)
 ## 予測～Average marginal prediction
 
 - 通常のアウトカム式のみで一発勝負
-- 一応Biasを避けた上でのBias補正方法も存在する[@grf-lab2024-jt]
+- 一応Bias補正方法も存在する[@grf-lab2024-jt]
 
 ## 因果～Average comparison
 
@@ -1020,6 +1026,8 @@ print(marginal_res)
 
 - これを、動悸/めまい/息切れ/倦怠感で各々行った
   - さらに、感度分析で機械学習モデル(grf)を使ってみたりしてみた
+
+<!-- Todo: 結果のForest plotとBar plotを見せる -->
  
 # 最後に
 
