@@ -530,34 +530,47 @@ marginaleffects::avg_comparisons(
 
 - 例えば、患者背景がCHFでRHCの効果がどうなるかをみたい時
 - まずは交互作用項を含んだ式を作成する
-![](image/monospline_formula.png)
+
+```{r}
+summary(monospline_fit)$call
+
+parameters::model_parameters(
+  monospline_fit, 
+  exponentiate = T
+) |> 
+print_html()
+
+
+```
 
 ## 実践④-2
 
-- 次に、データセットを介入に併せて(RHCの有無)拡張する
+- 次に、データセットを介入に併せて(RHCの有無)拡張した上でSubgroupを作成する
 
+![](image/rhc_interdata.png)
 
-```{r}
-sum_mfit <- summary(monospline_fit)
+## 実践④-3
 
-print(sum_mfit$call)
-```
-
-:::: {.columns}
-
-::: {.column width="50%"}
+- このsubgroupにモデルをfitさせて個々人の死亡率を計算する
 
 ```{r}
-
 
 marginaleffects::predictions(
   monospline_fit, 
   variables = "swang1", 
-  newdata = subset(cat_chf == "Others")
+  newdata = subset(cat_chf == "CHF")
   ) |> 
   tibble::as_tibble() |> 
-  dplyr::select(rowid, swang1, cat_chf, estimate, conf.low, conf.high, death_01) |> 
-  print()
+  dplyr::select(rowid, rowidcf, swang1, age, crea1, estimate, conf.low, conf.high)
+
+```
+
+## 実践④-4
+
+- このEstimateを使っていろんな指標を算出する
+
+  - Risk differenceの場合
+```{r}
 
 marginaleffects::avg_predictions(
   monospline_fit, 
@@ -567,24 +580,8 @@ marginaleffects::avg_predictions(
 
 ```
 
-- まずは、交互作用項を入れたモデルを作成する
-- 原疾患が心不全以外の患者を抜粋
-- RHCのみ0と1両者でそれ以外の列を複製したデータセットを作成
-- RHC毎の死亡率を計算
-
-:::
-
-::: {.column width="50%"}
-
+  - Odds ratioの場合
 ```{r}
-marginaleffects::comparisons(
-  monospline_fit, 
-  variables = "swang1", 
-  newdata = subset(cat_chf == "CHF")
-  ) |> 
-  tibble::as_tibble() |> 
-  dplyr::select(swang1, cat_chf, estimate, conf.low, conf.high, death_01) |> 
-  print()
 
 marginaleffects::avg_comparisons(
   monospline_fit, 
@@ -594,31 +591,27 @@ marginaleffects::avg_comparisons(
   transform = "exp"
   ) 
 
+
 ```
 
-- CHFの患者のみ抜き出し、回帰モデルを元にRHCとNo RHCのRiskの差を一人ずつ計算を計算する
-- 平均して1つの数値を出す
-
-:::
-
-::::
 
 ## G-computationの応用～Propensity score match
 
 1.   Propensity score matchを計算
 1.   Matched cohortを作成
 1.   その上で、共変量を入れたアウトカムモデルで回帰を行う
-  1. RCTの多変量と同じでバランスをちゃんと取れる
+1. RCTの多変量と同じでバランスをちゃんと取れる
 1.   どの群を選ぶかでATT/ATE/ATUも簡単に計算可能！[@Greifer2025-me]
 
-## 実践⑤～準備
-<!-- Todo: 見にくいので直す。複数スライドに直す -->
-- まずはPropensity score match行う
-- Matched dataを出す
-- Propensity scoreに用いた共変量を**含めて**アウトカムの回帰モデルを作成する
-- この重みも用いることに注意！
+## 実践⑤-1
 
+- まずはPropensity score match行い、Matched dataを出す
+
+:::: {.columns}
+
+::: {.column width="50%"}
 ```{r}
+
 
 set.seed(42)
 
@@ -629,11 +622,32 @@ distance = "glm"
 
 print(mout)
 
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r}
+
 dat_m <- MatchIt::match_data(mout)
 
 cat("matched data \n")
 
 tibble::as_tibble(dplyr::select(dat_m, death_yn, swang1, cat_chf, age, distance, weights))
+
+```
+
+:::
+
+::::
+
+## 実践⑤-2
+
+- Propensity scoreに用いた共変量を**含めて**アウトカムの回帰モデルを作成する
+- この重みも用いることに注意！
+
+```{r}
 
 cat("アウトカムモデル \n")
 
@@ -642,7 +656,7 @@ matched_spline_fit <- glm(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + c
                family = binomial,
                weights = weights)
 
-summary(matched_spline_fit)
+summary(matched_spline_fit)$call
 
 ```
 
@@ -666,7 +680,7 @@ marginaleffects::comparisons(
   tibble::as_tibble() |> 
   dplyr::select(rowid, contrast, estimate, conf.low, conf.high, death_01, swang1, weights)
 
-cat("ここから計算する")
+cat("\n\nここから計算する\n\n")
 
 matched_ate <- avg_comparisons(matched_spline_fit,
                 variables = "swang1",
@@ -691,7 +705,7 @@ marginaleffects::comparisons(
   tibble::as_tibble() |> 
   dplyr::select(rowid, contrast, estimate, conf.low, conf.high, death_01, swang1, weights)
 
-cat("ここから計算する")
+cat("\n\nここから計算する\n\n")
 
 matched_att <- avg_comparisons(matched_spline_fit,
                 variables = "swang1",
@@ -748,7 +762,7 @@ matched_atc
 1. 予測式とATE/ATT/ATCでそれぞれ重み付けの計算方法を変える(ATOなどもあり)
 1. この重みを考慮したアウトカムモデルを作成する
 1. このアウトカムモデルで、各データでのG-computationを行う
-  1. ATEは全体、ATTはRHC使用者、ATCはRHC不使用者
+1. ATEは全体、ATTはRHC使用者、ATCはRHC不使用者
 
 ::: {.panel-tabset}
 
@@ -763,18 +777,18 @@ method = "glm",
 estimand = "ATE"
 )
 
-cat(" \n 重み付けの式 \n")
+cat(" \n 1. 重み付けの式 \n")
 
 print(wout_ate)
 
-cat("\n 重みを元のデータセットに追加 \n")
+cat("\n 2. 重みを元のデータセットに追加 \n")
 
 dplyr::mutate(rhc_prep, weights = wout_ate$weights) |> 
   tibble::as_tibble() |> 
   dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
   
   
-cat("\n 重みを考慮したアウトカムモデル \n")
+cat("\n 3. 重みを考慮したアウトカムモデル \n")
 
 weighted_spline_ate_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = rhc_prep, 
@@ -785,7 +799,7 @@ print(weighted_spline_ate_fit)
 
 #Compute effects; RR and confidence interval
 
-cat("\n Risk ratio and 95% confidence interval\n")
+cat("\n 4. Risk ratio and 95% confidence interval \n")
 
 marginaleffects::avg_comparisons(weighted_spline_ate_fit,
                 variables = "swang1",
@@ -806,17 +820,17 @@ method = "glm",
 estimand = "ATT"
 )
 
-cat(" \n 重み付けの式 \n")
+cat(" \n 1. 重み付けの式 \n")
 
 print(wout_att)
 
-cat("\n 重みを元のデータセットに追加 \n")
+cat("\n 2. 重みを元のデータセットに追加 \n")
 
 dplyr::mutate(rhc_prep, weights = wout_att$weights) |> 
   tibble::as_tibble() |> 
   dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
   
-cat("\n 重みを考慮したアウトカムモデル \n")
+cat("\n 3. 重みを考慮したアウトカムモデル \n")
 
 weighted_spline_att_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = rhc_prep, 
@@ -827,7 +841,7 @@ print(weighted_spline_att_fit)
 
 #Compute effects; RR and confidence interval
 
-cat("\n Risk ratio and 95% confidence interval\n")
+cat("\n 4. Risk ratio and 95% confidence interval \n")
 
 marginaleffects::avg_comparisons(
   weighted_spline_att_fit,
@@ -851,17 +865,17 @@ method = "glm",
 estimand = "ATC"
 )
 
-cat(" \n 重み付けの式 \n")
+cat(" \n 1. 重み付けの式 \n")
 
 print(wout_atc)
 
-cat("\n 重みを元のデータセットに追加 \n")
+cat("\n 2. 重みを元のデータセットに追加 \n")
 
 dplyr::mutate(rhc_prep, weights = wout_atc$weights) |> 
   tibble::as_tibble() |> 
   dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
 
-cat("\n 重みを考慮したアウトカムモデル \n")
+cat("\n 3. 重みを考慮したアウトカムモデル \n")
 
 weighted_spline_atc_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
                data    = rhc_prep, 
@@ -872,7 +886,7 @@ print(weighted_spline_atc_fit)
 
 #Compute effects; RR and confidence interval
 
-cat("\n Risk ratio and 95% confidence interval \n")
+cat("\n 4. Risk ratio and 95% confidence interval \n")
 
 marginaleffects::avg_comparisons(
   weighted_spline_atc_fit,
