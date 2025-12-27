@@ -35,6 +35,7 @@ library(ggplot2)
 library(ggsurvfit)
 library(plotly)
 library(modelsummary)
+library(jtools)
 library(tinytable)
 library(marginaleffects)
 library(Hmisc)
@@ -525,14 +526,23 @@ marginaleffects::avg_comparisons(
 -   元データのうち、元々Interventionが0/1の群だけで同様の事をするとATT/ATUも推定可能
 -   Interventionだけでなくても、興味がある変数を動かす事で周辺効果(marginal effect)を出すことが可能
 
-## 実践④
+## 実践④-1
 
 - 例えば、患者背景がCHFでRHCの効果がどうなるかをみたい時
-<!-- Todo: 醜いので直す -->
-```{r}
-summary(monospline_fit)
+- まずは交互作用項を含んだ式を作成する
+![](image/monospline_formula.png)
 
+## 実践④-2
+
+- 次に、データセットを介入に併せて(RHCの有無)拡張する
+
+
+```{r}
+sum_mfit <- summary(monospline_fit)
+
+print(sum_mfit$call)
 ```
+
 :::: {.columns}
 
 ::: {.column width="50%"}
@@ -1027,7 +1037,23 @@ print(marginal_res)
 - これを、動悸/めまい/息切れ/倦怠感で各々行った
   - さらに、感度分析で機械学習モデル(grf)を使ってみたりしてみた
 
-<!-- Todo: 結果のForest plotとBar plotを見せる -->
+## Result
+
+::: {#fig-afsymp-res layout-ncol=3}
+
+![forest plot](image/afsymp_forestplot.png){width=90%}
+
+![responder fig](image/afsymp_responder.png)
+
+![ML fig](image/afsymp_responder_grf.png)
+
+
+Main figure
+:::
+
+- 誰に(症状がある患者)、どの介入(Rate/AAD/CA)を行うとQOLがどうなるか？を臨床的に使いやすく見せることを目的
+- そのため、Responder analysisも行った
+- 機械学習の結果もRobustnessを示すために行った
  
 # 最後に
 
