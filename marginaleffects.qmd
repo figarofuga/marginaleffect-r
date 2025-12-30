@@ -53,14 +53,8 @@ library(tidymodels)
 ## 皆さん多変量回帰は好きですか？
 
 -   古くから研究されつくされており、信頼感がある
-
 -   多くの統計ソフトに入っており、行うのが簡単
-
-<!-- TODO: 赤字になっていないのを直す -->
--   ::: red
-    *解釈性が高く、分かりやすい*
-    :::
-
+-   <span style="color:red;">*解釈性が高く、分かりやすい*</span>
 -   本当？
 
 ## 多変量回帰は簡単？ 
@@ -406,7 +400,7 @@ spline_fig2
     -   通常の解析だと、結果は集団全体の平均で丸め込まれてしまう
         -   <span style="color:red;">**Estimandをどうやって出せばいい？**</span>
 
-# Standardizationあるいは\ prametric g-formulaの基礎
+# Standardizationあるいは\n prametric g-formulaの基礎
 
 ## Marginal effectsという選択肢
 
@@ -561,7 +555,15 @@ marginaleffects::predictions(
   newdata = subset(cat_chf == "CHF")
   ) |> 
   tibble::as_tibble() |> 
-  dplyr::select(rowid, rowidcf, swang1, age, crea1, estimate, conf.low, conf.high)
+  dplyr::select(rowid, rowidcf, swang1, cat_chf, age, crea1, estimate, conf.low, conf.high)
+
+cat("\n - 例えば、平均するとこんな感じ \n")
+
+marginaleffects::avg_predictions(
+  monospline_fit, 
+  variables = "swang1", 
+  newdata = subset(cat_chf == "CHF")
+  )
 
 ```
 
@@ -572,7 +574,7 @@ marginaleffects::predictions(
   - Risk differenceの場合
 ```{r}
 
-marginaleffects::avg_predictions(
+marginaleffects::avg_comparisons(
   monospline_fit, 
   variables = "swang1", 
   newdata = subset(cat_chf == "CHF")
@@ -779,7 +781,7 @@ estimand = "ATE"
 
 cat(" \n 1. 重み付けの式 \n")
 
-print(wout_ate)
+print(wout_ate$call)
 
 cat("\n 2. 重みを元のデータセットに追加 \n")
 
@@ -795,11 +797,20 @@ weighted_spline_ate_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*c
                family = binomial,
                weightit = wout_ate)
 
-print(weighted_spline_ate_fit)
+print(weighted_spline_ate_fit$call)
 
-#Compute effects; RR and confidence interval
+cat("\n 4. G-computation \n")
 
-cat("\n 4. Risk ratio and 95% confidence interval \n")
+marginaleffects::predictions(
+  weighted_spline_ate_fit, 
+  variables = "swang1"
+) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(rowid, age, swang1, estimate, conf.low, conf.high) |> 
+  print()
+
+
+cat("\n 5. Risk ratio and 95% confidence interval \n")
 
 marginaleffects::avg_comparisons(weighted_spline_ate_fit,
                 variables = "swang1",
@@ -822,13 +833,14 @@ estimand = "ATT"
 
 cat(" \n 1. 重み付けの式 \n")
 
-print(wout_att)
+print(wout_att$call)
 
 cat("\n 2. 重みを元のデータセットに追加 \n")
 
 dplyr::mutate(rhc_prep, weights = wout_att$weights) |> 
   tibble::as_tibble() |> 
   dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
+  
   
 cat("\n 3. 重みを考慮したアウトカムモデル \n")
 
@@ -837,26 +849,33 @@ weighted_spline_att_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*c
                family = binomial,
                weightit = wout_att)
 
-print(weighted_spline_att_fit)
+print(weighted_spline_att_fit$call)
 
-#Compute effects; RR and confidence interval
+cat("\n 4. G-computation \n")
 
-cat("\n 4. Risk ratio and 95% confidence interval \n")
+marginaleffects::predictions(
+  weighted_spline_att_fit, 
+  variables = "swang1", 
+  newdata = subset(swang1 == "RHC")
+) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(rowid, age, swang1, estimate, conf.low, conf.high) |> 
+  print()
 
-marginaleffects::avg_comparisons(
-  weighted_spline_att_fit,
-  newdata = subset(swang1 == "RHC"),
-  variables = "swang1",
-  comparison = "lnratioavg",
-  transform = "exp")
 
+cat("\n 5. Risk ratio and 95% confidence interval \n")
+
+marginaleffects::avg_comparisons(weighted_spline_att_fit,
+                variables = "swang1",
+                newdata = subset(swang1 == "RHC"),
+                comparison = "lnratioavg",
+                transform = "exp")
 
 ```
 
 ### ATC(U)の場合
 
 ```{r}
-
 
 set.seed(42)
 
@@ -867,14 +886,15 @@ estimand = "ATC"
 
 cat(" \n 1. 重み付けの式 \n")
 
-print(wout_atc)
+print(wout_atc$call)
 
 cat("\n 2. 重みを元のデータセットに追加 \n")
 
 dplyr::mutate(rhc_prep, weights = wout_atc$weights) |> 
   tibble::as_tibble() |> 
   dplyr::select(death_01, swang_yn, age, sex, race, cat_chf, crea1, weights)
-
+  
+  
 cat("\n 3. 重みを考慮したアウトカムモデル \n")
 
 weighted_spline_atc_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*cat_chf + rcs(age, 4) + crea1 + sex + race + edu + income + wtkilo1 + temp1 + meanbp1 + resp1 + hrt1 + pafi1 + paco21 + ph1 + wblc1 + hema1 + sod1 + pot1 + bili1 + alb1 + cardiohx + chfhx + immunhx + transhx + amihx,
@@ -882,20 +902,29 @@ weighted_spline_atc_fit <- WeightIt::glm_weightit(formula =  death_01 ~ swang1*c
                family = binomial,
                weightit = wout_atc)
 
-print(weighted_spline_atc_fit)
+print(weighted_spline_atc_fit$call)
 
-#Compute effects; RR and confidence interval
+cat("\n 4. G-computation \n")
 
-cat("\n 4. Risk ratio and 95% confidence interval \n")
+marginaleffects::predictions(
+  weighted_spline_atc_fit, 
+  variables = "swang1", 
+  newdata = subset(swang1 == "No RHC")
+) |> 
+  tibble::as_tibble() |> 
+  dplyr::select(rowid, age, swang1, estimate, conf.low, conf.high) |> 
+  print()
 
-marginaleffects::avg_comparisons(
-  weighted_spline_atc_fit,
-  newdata = subset(swang1 == "No RHC"),   
-  variables = "swang1",
-  comparison = "lnratioavg",
-  transform = "exp")
 
+cat("\n 5. Risk ratio and 95% confidence interval \n")
 
+marginaleffects::avg_comparisons(weighted_spline_atc_fit,
+                variables = "swang1",
+                newdata = subset(swang1 == "No RHC"),
+                comparison = "lnratioavg",
+                transform = "exp")
+
+                
 ```
 :::
 
@@ -906,7 +935,9 @@ marginaleffects::avg_comparisons(
 - 因果推定を行う場合は、重み付けも行うD-learnerやX-learnerもある
 - 信頼区間やP値が出せないのが難点
  
-## 実践⑤ モデル作成
+## 実践⑤ S-learnerの場合
+
+## 実践⑤～モデル作成
 
 - Machine learning modelとしてXGBoostとする
 - ハイパーパラメーターはデフォルト
@@ -1041,7 +1072,7 @@ print(marginal_res)
 # 自分の研究においては・・・・・・
 
 - AF患者において動悸およびそれ以外の症状(息切れ、めまい/失神、倦怠感)のHR-QOLへの影響をみた研究
-- 特に、**非動悸の患者においてもCAは有効なのか？**を疑問として提案
+- 特に、<span style="color:red;">**非動悸の患者においてもCAは有効なのか？**</span>を疑問として提案
 - 動悸、息切れ、めまい/失神、倦怠感の有無でCAの有効性をみたかった
 
 ## How to use marginal effects
